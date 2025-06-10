@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StrideSync – Run Together, Even Apart</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafa;
+      color: #333;
+    }
+
+    a {
+      color: #0078d4;
+      text-decoration: none;
+    }
+
+    header {
+      background: linear-gradient(to right, #00b4d8, #0077b6);
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+    }
+
+    header p {
+      font-size: 1.25rem;
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
+    }
+
+    .cta-button {
+      background: #fff;
+      color: #0077b6;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .cta-button:hover {
+      background: #e0f7fa;
+    }
+
+    .section {
+      padding: 4rem 2rem;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .section h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .feature h3 {
+      margin-top: 0.5rem;
+      font-size: 1.2rem;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+    }
+
+    .target-users, .pricing, .testimonials {
+      background: #fff;
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .testimonial {
+      font-style: italic;
+      margin: 1rem 0;
+      padding-left: 1rem;
+      border-left: 4px solid #00b4d8;
+    }
+
+    .price-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .price-box h3 {
+      margin: 0.5rem 0;
+    }
+
+    footer {
+      background: #eeeeee;
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏃 StrideSync</h1>
+  <p>Track your runs, challenge your friends, and run toward your goals — together.</p>
+  <button class="cta-button">Get Started Free</button>
+</header>
+
+<section class="section">
+  <h2>🚀 Why Runners Love StrideSync</h2>
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-icon">📈</div>
+      <h3>Track Everything</h3>
+      <p>Distance, pace, time, calories, and route — synced from your smartwatch.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">👥</div>
+      <h3>Run as a Team</h3>
+      <p>Solo or group goals like "Run 400km together" or "50km in June".</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏆</div>
+      <h3>Live Leaderboards</h3>
+      <p>See who's running the most, the longest streak, or the fastest improvement.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔥</div>
+      <h3>Motivation That Sticks</h3>
+      <p>Daily nudges, chat, and progress heatmaps to keep you on track.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🎯</div>
+      <h3>Smart Goals</h3>
+      <p>Set personal or team goals with automatic tracking and reminders.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📱</div>
+      <h3>Wearable Sync</h3>
+      <p>Integrate with Garmin, Apple Watch, Fitbit, or Strava instantly.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section target-users">
+  <h2>🎯 Who It's For</h2>
+  <ul>
+    <li>🏃 Casual runners looking for light structure</li>
+    <li>🤝 Friends & families who run remotely</li>
+    <li>🏢 Workplace wellness programs</li>
+    <li>🎽 Clubs or charities with team goals</li>
+    <li>🎯 Runners training for events like 5Ks or half-marathons</li>
+  </ul>
+</section>
+
+<section class="section pricing">
+  <h2>💸 Simple Pricing</h2>
+  <div class="price-box">
+    <h3>Free Forever</h3>
+    <p>Track runs, join public challenges, and stay motivated.</p>
+    <br>
+    <h3>Premium – €3.99/month</h3>
+    <p>Create private groups, get deeper stats, coaching tips, and exports.</p>
+    <br>
+    <h3>Corporate Plans</h3>
+    <p>For teams and companies — with HR dashboards and branded leaderboards.</p>
+  </div>
+</section>
+
+<section class="section testimonials">
+  <h2>💬 What Runners Say</h2>
+  <p class="testimonial">"StrideSync helped our whole office run 1,000km in a month. And we actually had fun doing it!" – HR Lead, TechCo</p>
+  <p class="testimonial">"I run alone, but my team heatmap keeps me going every week." – User from Dublin</p>
+  <p class="testimonial">"The challenges and GIFs make this feel more like a game than a tracker." – Fitness Club Member</p>
+</section>
+
+<footer>
+  &copy; 2025 StrideSync | <a href="#">Privacy</a> | <a href="#">Terms</a> | <a href="#">Contact</a>
+</footer>
+
+</body>
+</html>

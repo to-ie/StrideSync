@@ -11,7 +11,7 @@ Ideal for everything from casual 5k runners to half-marathon prep and charity gr
 
 | Feature | Description |
 |--------|-------------|
-| **GPS-based Run Tracking** | Real-time tracking of distance, pace, route, time, and calories. |
+| **Run Tracking Log** | Tracking log of distance, pace, route, time, and calories. |
 | **Solo and Group Modes** | Run alone or opt into:<br>  - **Challenges** (e.g. "Run 50km in June")<br>  - **Cumulative Goals** (e.g. "Team Abtrace runs to London" - 400km together) |
 | **Live Leaderboards** | Ranks participants by total distance, improvement, consistency, etc. |
 | **Team Chat / Motivations** | Lightweight group chat with daily reminders, encouragement GIFs, or milestone celebrations. |
@@ -96,4 +96,29 @@ Ideal for everything from casual 5k runners to half-marathon prep and charity gr
 - **Virtual races** with real-time map tracking.
 - **Social accountability layer**: Let people pledge runs to charity or unlock rewards for consistency.
 - **API + leaderboard widget** for embedding group stats into websites or Slack.
+
+---
+
+## Coding notes
+
+flask run
+
+
+html:
+
+```
+{% if title %}
+<title>{{ title }} - Microblog</title>
+{% else %}
+<title>Welcome to Microblog!</title>
+{% endif %}
+```
+
+```
+{% for post in posts %}
+<div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+{% endfor %}
+```
+
+{% block content %}{% endblock %}
 
