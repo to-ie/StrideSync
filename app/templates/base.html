@@ -1,209 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StrideSync – Run Together, Even Apart</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9fafa;
-      color: #333;
-    }
+  <meta charset="UTF-8">
+  <title>StrideSync - Track your running, together!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    a {
-      color: #0078d4;
-      text-decoration: none;
-    }
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
 
-    header {
-      background: linear-gradient(to right, #00b4d8, #0077b6);
-      color: white;
-      padding: 4rem 2rem;
-      text-align: center;
-    }
+  <!-- Your custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    header h1 {
-      font-size: 2.8rem;
-      margin-bottom: 1rem;
-    }
-
-    header p {
-      font-size: 1.25rem;
-      max-width: 600px;
-      margin: 0 auto 2rem auto;
-    }
-
-    .cta-button {
-      background: #fff;
-      color: #0077b6;
-      padding: 1rem 2rem;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border-radius: 30px;
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .cta-button:hover {
-      background: #e0f7fa;
-    }
-
-    .section {
-      padding: 4rem 2rem;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    .section h2 {
-      text-align: center;
-      margin-bottom: 2rem;
-      font-size: 2rem;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 2rem;
-    }
-
-    .feature {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      padding: 1.5rem;
-      text-align: center;
-    }
-
-    .feature h3 {
-      margin-top: 0.5rem;
-      font-size: 1.2rem;
-    }
-
-    .feature-icon {
-      font-size: 2rem;
-    }
-
-    .target-users, .pricing, .testimonials {
-      background: #fff;
-      border-radius: 10px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-
-    .testimonial {
-      font-style: italic;
-      margin: 1rem 0;
-      padding-left: 1rem;
-      border-left: 4px solid #00b4d8;
-    }
-
-    .price-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .price-box h3 {
-      margin: 0.5rem 0;
-    }
-
-    footer {
-      background: #eeeeee;
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.9rem;
-    }
-
-    @media (max-width: 600px) {
-      header h1 {
-        font-size: 2rem;
-      }
-    }
-  </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </head>
+
 <body>
+  <!-- Header / Navbar -->
+  <header>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <p class="logo" href="#">🏃 StrideSync</p>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="btn btn-dark btn-lg px-4" href="#">LOGIN</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
 
-<header>
-  <h1>🏃 StrideSync</h1>
-  <p>Track your runs, challenge your friends, and run toward your goals — together.</p>
-  <button class="cta-button">Get Started Free</button>
-</header>
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section py-5">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-4 up40">
+            <h1 class="display-4 hero-title animate-on-scroll delay-1">Track your runs <span>...together</span></h1>
+            <p class="text-muted my-4 animate-on-scroll delay-2">
+              StrideSync makes running more fun — whether you're flying solo, cheering on your friends, or crushing team goals. Set challenges, climb leaderboards, and keep each other moving.
+            </p>
+            <div class="d-flex gap-3 animate-on-scroll delay-3">
+              <a class="btn btn-dark btn-lg px-4" href="#">GET STARTED</a>
+              <a class="btn btn-soft btn-lg px-4" href="#features">LEARN MORE</a>
+            </div>
+          </div>
 
-<section class="section">
-  <h2>🚀 Why Runners Love StrideSync</h2>
-  <div class="features-grid">
-    <div class="feature">
-      <div class="feature-icon">📈</div>
-      <h3>Track Everything</h3>
-      <p>Distance, pace, time, calories, and route — synced from your smartwatch.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">👥</div>
-      <h3>Run as a Team</h3>
-      <p>Solo or group goals like "Run 400km together" or "50km in June".</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🏆</div>
-      <h3>Live Leaderboards</h3>
-      <p>See who's running the most, the longest streak, or the fastest improvement.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🔥</div>
-      <h3>Motivation That Sticks</h3>
-      <p>Daily nudges, chat, and progress heatmaps to keep you on track.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🎯</div>
-      <h3>Smart Goals</h3>
-      <p>Set personal or team goals with automatic tracking and reminders.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">📱</div>
-      <h3>Wearable Sync</h3>
-      <p>Integrate with Garmin, Apple Watch, Fitbit, or Strava instantly.</p>
-    </div>
-  </div>
-</section>
+          <div class="col-lg-6 text-center position-relative">
+            <img src="{{ url_for('static', filename='img/runner.png') }}" height="500px" class="animate-on-scroll delay-2">
+          </div>
+        </div>
+      </div>
+    </section>
 
-<section class="section target-users">
-  <h2>🎯 Who It's For</h2>
-  <ul>
-    <li>🏃 Casual runners looking for light structure</li>
-    <li>🤝 Friends & families who run remotely</li>
-    <li>🏢 Workplace wellness programs</li>
-    <li>🎽 Clubs or charities with team goals</li>
-    <li>🎯 Runners training for events like 5Ks or half-marathons</li>
-  </ul>
-</section>
+    <!-- Info Cards Section -->
+    <section class="info-cards-section py-5">
+      <div class="container">
+        <div class="row mt-5 gy-4">
+          <!-- First Column -->
+          <div class="col-md-4 animate-on-scroll delay-1">
+            <div class="feature-card d-flex flex-column h-100">
+              <h4>What’s StrideSync all about?</h4>
+              <p class="text-muted">
+                StrideSync helps you stay on track, push your limits, and enjoy the journey together. Set challenges, track your runs, and cheer on your friends. Whether you're chasing a goal or just showing up, every step counts more when it’s shared.
+              </p>
+              <a href="#" class="text-decoration-none fw-semibold mt-auto">LEARN MORE →</a>
+            </div>
+          </div>
 
-<section class="section pricing">
-  <h2>💸 Simple Pricing</h2>
-  <div class="price-box">
-    <h3>Free Forever</h3>
-    <p>Track runs, join public challenges, and stay motivated.</p>
-    <br>
-    <h3>Premium – €3.99/month</h3>
-    <p>Create private groups, get deeper stats, coaching tips, and exports.</p>
-    <br>
-    <h3>Corporate Plans</h3>
-    <p>For teams and companies — with HR dashboards and branded leaderboards.</p>
-  </div>
-</section>
+          <!-- Second Column -->
+          <div class="col-md-4 d-flex flex-column animate-on-scroll delay-2">
+            <div class="mt-auto">
+              <div class="feature-card mb-3" style="background: #f33e78;">
+                <h3 class="mb-0">25+</h3>
+                <p>Registered Users</p>
+              </div>
 
-<section class="section testimonials">
-  <h2>💬 What Runners Say</h2>
-  <p class="testimonial">"StrideSync helped our whole office run 1,000km in a month. And we actually had fun doing it!" – HR Lead, TechCo</p>
-  <p class="testimonial">"I run alone, but my team heatmap keeps me going every week." – User from Dublin</p>
-  <p class="testimonial">"The challenges and GIFs make this feel more like a game than a tracker." – Fitness Club Member</p>
-</section>
+              <div class="feature-card" style="background: #666; color: white;">
+                <h3 class="mb-0">100km</h3>
+                <p>Collectively Ran</p>
+              </div>
+            </div>
+          </div>
 
-<footer>
-  &copy; 2025 StrideSync | <a href="#">Privacy</a> | <a href="#">Terms</a> | <a href="#">Contact</a>
-</footer>
+          <!-- Third Column -->
+          <div class="col-md-4 d-flex flex-column animate-on-scroll delay-3">
+            <div class="mt-auto">
+              <div class="feature-card" style="background: #b7a7c6; color: white;">
+                <h3 class="mb-0">Completely FREE!</h3>
+                <p>Because we’re all about good vibes</p>
+                <a href="#" class="text-decoration-none fw-semibold" style="color: #FFF;">SEE HOW YOU CAN HELP →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Features Section -->
+    <section class="features-section py-5" id="features">
+      <div class="container">
+        <h2 class="mb-5 section-title text-center">Built to keep you <span>moving</span></h2>
+
+        <div class="row g-4">
+          <!-- Feature Card 1 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-1">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-stopwatch fs-1 text-primary mb-3"></i>
+              <h5 class="fw-bold">Run Tracking</h5>
+              <p class="text-muted small mb-0">Track your distance, time and pace effortlessly.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 2 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-2">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-people fs-1 text-success mb-3"></i>
+              <h5 class="fw-bold">Group Challenges</h5>
+              <p class="text-muted small mb-0">Create your own team goals and achieve them together.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 3 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-3">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-bar-chart-line fs-1 text-warning mb-3"></i>
+              <h5 class="fw-bold">Live Leaderboards</h5>
+              <p class="text-muted small mb-0">See how you and your friends stack up in real time.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 4 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-4">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-chat-heart fs-1 text-danger mb-3"></i>
+              <h5 class="fw-bold">Motivation & Chat</h5>
+              <p class="text-muted small mb-0">Send encouragement and celebrate streaks with your group.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 5 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-1">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-calendar2-week fs-1 text-info mb-3"></i>
+              <h5 class="fw-bold">Progress Heatmaps</h5>
+              <p class="text-muted small mb-0">Visualise your running habits over time.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 6 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-2">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-bullseye fs-1 text-primary mb-3"></i>
+              <h5 class="fw-bold">Custom Goals</h5>
+              <p class="text-muted small mb-0">Set daily, weekly or team milestones to aim for.</p>
+            </div>
+          </div>
+
+          <!-- Feature Card 7 -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-3">
+            <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
+              <i class="bi bi-watch fs-1 text-secondary mb-3"></i>
+              <h5 class="fw-bold">Wearable Sync</h5>
+              <p class="text-muted small mb-0">Automatically import runs from Garmin, Apple Watch, or Strava.</p>
+            </div>
+          </div>
+
+          <!-- CTA Card -->
+          <div class="col-md-3 col-sm-6 animate-on-scroll delay-4">
+            <div class="feature-box p-4 rounded text-white text-center h-100" style="background: #f8943e;">
+              <h2 class="fw-bold mb-2">Get started!</h2>
+              <p class="mb-3">Create your account and get going.</p>
+              <a href="#" class="btn btn-outline-light btn-sm">SIGN UP TODAY</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <!-- Sneak Peek Section -->
+    <section class="py-5 position-relative sneakpeak">
+      <div class="container position-relative">
+
+        <div class="sneak-img-wrapper position-absolute d-none d-lg-block animate-on-scroll delay-2"
+            style="top: 40px; left: 90px; z-index: 90;">
+          <img src="{{ url_for('static', filename='img/placeholder.png') }}"
+              class="img-fluid rounded shadow offset-image"
+              alt="Platform preview" style="max-width: 600px;">
+        </div>
+
+
+
+        <!-- Pink Content Box -->
+        <div class="ms-lg-5 ps-lg-5 bg-pink text-white rounded-4 p-5 position-relative z-2">
+          <div class="row align-items-center">
+            <div class="col-lg-6 offset-lg-6">
+              <h2 class="fw-bold mb-3" style="letter-spacing: -1px; font-weight: 800 !important;">Take a sneak peek inside!</h2>
+              <p class="mb-4">From group goals to personal bests, see how StrideSync keeps you and your team moving with energy, ease, and fun.</p>
+
+              <div class="row mb-4">
+                <div class="col-sm-6"><i class="bi bi-check-circle-fill me-2"></i> Group tracking & goals</div>
+                <div class="col-sm-6"><i class="bi bi-check-circle-fill me-2"></i> Friendly competition</div>
+                <div class="col-sm-6"><i class="bi bi-check-circle-fill me-2"></i> Milestones & streaks</div>
+                <div class="col-sm-6"><i class="bi bi-check-circle-fill me-2"></i> Clean visual stats</div>
+              </div>
+
+              <a href="#" class="btn btn-outline-light btn-sm">GET STARTED TODAY</a>
+
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-4">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <!-- Left side -->
+      <div class="mb-2 mb-md-0">
+        &copy; 2025 StrideSync. All rights reserved.
+      </div>
+
+      <!-- Right side -->
+      <div>
+        <a href="/privacy" class="text-white text-decoration-none me-3">Privacy Policy</a>
+        <a href="/terms" class="text-white text-decoration-none me-3">Terms & Conditions</a>
+        <a href="/contact" class="text-white text-decoration-none">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- Bootstrap JS (for navbar toggling) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+
+  <!-- anmation scrript -->
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.animate-on-scroll').forEach(el => {
+      observer.observe(el);
+    });
+  </script>
+
+
 
 </body>
 </html>
+
