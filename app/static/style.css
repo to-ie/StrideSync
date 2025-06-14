@@ -138,7 +138,7 @@ a:hover {
 }
 
 .bg-pink {
-  background-color: #ff5c77;
+  background-color: #f33e78;
 }
 
 .offset-image {
@@ -159,6 +159,19 @@ a:hover {
 footer a:hover {
   text-decoration: underline;
   color: #f33e78;
+}
+
+.cta-button {
+  background-color: #f33e78;
+  font-size: 1.5rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #f33e78;
+  transform: scale(1.03);
+  color: #fff;
 }
 
 
