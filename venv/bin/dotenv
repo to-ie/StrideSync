@@ -1,4 +1,4 @@
-#!/home/theodore/Documents/Github/StrideSync/venv/bin/python3
+#!/home/theodore/Documents/github/StrideSync/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

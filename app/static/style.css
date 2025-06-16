@@ -2,6 +2,18 @@ body {
     background-color: #f5f5f5;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+
 footer {
     background-color: #333;
 }
@@ -32,7 +44,14 @@ a:hover {
 }
 
 .up40 {
-    margin-top: -40px;
+  transform: translateY(40px);
+  opacity: 0;
+  transition: all 0.8s ease;
+}
+
+.up40.visible {
+  transform: none;
+  opacity: 1;
 }
 
 .btn-outline-dark {
@@ -174,9 +193,23 @@ footer a:hover {
   color: #fff;
 }
 
+.logo-container{
+  color: unset; 
+}
 
+.logo-container:hover{
+  color: unset; 
+}
 
+.form-control.wide {
+  max-width: 100%;
+  font-size: 1.1rem;
+  padding: 1rem;
+}
 
+.invalid-feedback{
+  margin-left: 15px;
+}
 
 
 

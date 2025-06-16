@@ -1,18 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Sign In</h1>
-    <form action="" method="post" novalidate>
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}
-        </p>
-        <p>
-            {{ form.password.label }}<br>
-            {{ form.password(size=32) }}
-        </p>
-        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
-        <p>{{ form.submit() }}</p>
-    </form>
+
+<!-- Spacer -->
+<div class="my-5"></div>
+
+<!-- Hero Section -->
+<section class="hero-section py-5">
+  <div class="container">
+    <div class="row flex-column-reverse flex-lg-row justify-content-center align-items-center">
+
+      <!-- Login Form -->
+      <div class="col-lg-6 d-flex flex-column animate-on-scroll up40">
+        <h1 class="display-4 fw-bold mb-4 hero-title">
+          Good to see <span>you</span> again!
+        </h1>
+
+        <div class="my-2"></div>
+
+
+        <form action="" method="post" novalidate class="w-100" style="max-width: 600px;">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            {{ form.email(class="form-control wide", placeholder="Enter your email address") }}
+            {% for error in form.email.errors %}
+            <div class="invalid-feedback d-block">
+                {{ error }}
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-4">
+            {{ form.password(class="form-control wide", placeholder="Enter your password") }}
+            {% for error in form.password.errors %}
+            <div class="invalid-feedback d-block">
+                {{ error }}
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="form-check mb-4">
+            {{ form.remember_me(class="form-check-input") }}
+            {{ form.remember_me.label(class="form-check-label") }}
+          </div>
+
+          <div class="d-grid">
+            {{ form.submit(class="btn btn-dark btn-lg px-4") }}
+          </div>
+        </form>
+      </div>
+
+      <!-- Register Panel -->
+      <div class="col-lg-6 d-flex align-items-center animate-on-scroll"> 
+        <div class="p-5 shadow-sm border rounded bg-light w-100" style="max-width: 600px; margin-top: 115px;">
+          <h2 class="mb-3">New here?</h2>
+          <p class="lead mb-4">Take the first step with StrideSync — and let’s run better, together.</p>
+          <a class="btn btn-soft btn-lg px-4" href="/register">CREATE AN ACCOUNT</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 {% endblock %}
