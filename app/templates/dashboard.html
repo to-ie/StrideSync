@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <h1 class="display-4 fw-bold mb-4 hero-title">
+        Welcome back <span>{{ user.username }}</span> 👋
+    </h1>
+    <p class="lead mt-3 text-muted" style="margin-top: -20px !important; margin-bottom: 40px;">Great to see you back on StrideSync.</p>
+
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Your activity map</h4>
+            <a href="#" class="btn btn-soft btn-sm">
+                <i class="bi bi-plus-lg"></i> Log an activity
+            </a>
+        </div>
+
+        <!-- Heatmap Container -->
+        <div class="rounded border p-3 bg-white shadow-sm" style="overflow-x: auto; display: inline-block;">
+        <div class="d-flex flex-column">
+
+            <!-- Month Labels -->
+            <div class="d-flex mb-1" style="margin-left: 30px; gap: 4px;">
+            <div style="width: 30px;"></div>  <!-- spacer -->
+            {% for month in month_labels %}
+                <div style="width: 14px; text-align: center; font-size: 0.75rem;">{{ month }}</div>
+            {% endfor %}
+            </div>
+
+            <!-- Heatmap Rows -->
+            <div class="d-flex" style="gap: 4px;">
+            <!-- Day Labels -->
+            <div class="d-flex flex-column justify-content-between me-1" style="height: 112px;">
+                <div style="font-size: 0.7rem;">Mon</div>
+                <div style="font-size: 0.7rem;">Wed</div>
+                <div style="font-size: 0.7rem;">Fri</div>
+            </div>
+
+            <!-- Weekly Columns -->
+            {% for week in heatmap_cells %}
+                <div class="d-flex flex-column" style="gap: 4px;">
+                {% for cell in week %}
+                    {% if cell %}
+                    <div
+                        title="{% if cell.active %}{{ '%.1f'|format(cell.distance) }} km on {{ cell.date.strftime('%d-%m-%y') }}{% else %}{{ cell.date.strftime('%d-%m-%y') }}{% endif %}"
+                        style="
+                        width: 14px;
+                        height: 14px;
+                        border-radius: 2px;
+                        background-color: {{ '#f33e78' if cell.active else '#e2e2e2' }};
+                        transition: background-color 0.2s;"
+                    ></div>
+                    {% else %}
+                    <div style="width: 14px; height: 14px; background-color: transparent;"></div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+            {% endfor %}
+            </div>
+
+        </div>
+        </div>
+
+        
+    </div>
+    <!-- Recent Runs Section -->
+    <div class="mb-5">
+        {% if recent_runs %}
+        <div class="list-group shadow-sm">
+          {% for run in recent_runs %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ run.date.strftime('%b %d, %Y') }}</strong><br>
+              <small class="text-muted">
+                {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · {{ run.pace }} sec/km
+              </small>
+            </div>
+            <a href="{{ url_for('view_run', run_id=run.id) }}" class="btn btn-sm btn-outline-dark">Details</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+          <p class="text-muted">No recent activity found.</p>
+        {% endif %}
+    </div>
+
+
+
+
+    <!-- My Groups Section -->
+    <div class="mb-5">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>My groups</h4>
+        <a href="#" class="btn btn-soft btn-sm">
+          <i class="bi bi-plus-lg"></i> Create New Group
+        </a>
+      </div>
+      <div class="row g-3">
+        {% for group in current_user.groups %}
+          <div class="col-md-4">
+            <div class="border rounded p-3 bg-light h-100 shadow-sm">
+              <h5 class="mb-1">{{ group.name }}</h5>
+              <p class="small text-muted mb-2">{{ group.description[:80] }}...</p>
+              {% if group in current_user.admin_of_groups %}
+                <span class="badge bg-warning text-dark">Admin</span>
+              {% endif %}
+              <a href="#" class="stretched-link"></a>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-muted">You're not in any groups yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- your Challenges Section -->
+    <div class="mb-5">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Your challenges</h4>
+        <a href="#" class="btn btn-soft btn-sm">
+          <i class="bi bi-plus-lg"></i> Join new challenges
+        </a>
+      </div>
+      <div class="list-group ">
+        {% for challenge in live_challenges %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1">{{ challenge.name }}</h6>
+              <small class="text-muted">{{ challenge.description }}</small>
+            </div>
+            <a href="#" class="btn btn-sm btn-outline-success">Join</a>
+          </div>
+        {% else %}
+          <p class="text-muted">No challenges available right now.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

@@ -212,6 +212,76 @@ footer a:hover {
 }
 
 
+.navbar .dropdown-menu {
+  min-width: 200px;
+  font-size: 0.95rem;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+
+.heatmap {
+  display: flex;
+  flex-direction: row;
+}
+
+.heatmap-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.has-run {
+  background-color: #f33e78;
+}
+
+.no-run {
+  background-color: #e2e2e2;
+}
+
+.month-labels {
+  display: flex;
+  gap: 2px;
+  margin-left: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.day-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 90px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* animations */
 

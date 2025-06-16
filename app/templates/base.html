@@ -28,10 +28,30 @@
               <ul class="navbar-nav ms-auto">
 
               {% if current_user.is_anonymous %}
-                <li class="nav-item"><a class="btn btn-dark px-4" href="{{ url_for('login') }}">LOGIN</a></li>
+                <li class="nav-item">
+                  <a class="btn btn-dark px-4" href="{{ url_for('login') }}">LOGIN</a>
+                </li>
               {% else %}
-                <li class="nav-item"><a class="btn btn-dark px-4" href="{{ url_for('logout') }}">LOGOUT</a></li>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="{{ url_for('static', filename='img/avatar.jpg') }}" class="rounded-circle me-2" width="36" height="36" alt="Avatar">
+                    <span class="fw-semibold">{{ current_user.username }}</span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="#"">My activities</a></li>
+                    <li><a class="dropdown-item" href="#"">My groups</a></li>
+                    <li><a class="dropdown-item" href="#">Join a challenge</a></li>
+                    <li><a class="dropdown-item" href="#">My account</a></li>
+                    {% if current_user.role.name == 'ADMIN' %}
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item text-danger" href="#">Administration</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                  </ul>
+                </li>
               {% endif %}
+
 
 
               </ul>

@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 import secrets
 import enum
@@ -9,6 +8,9 @@ from flask_login import UserMixin
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from app import db, login
+
+from datetime import datetime, timezone
+
 
 # ---------------------------
 # Enums
@@ -43,6 +45,13 @@ group_admins = sa.Table(
     sa.Column("group_id", sa.ForeignKey("groups.id"), primary_key=True),
 )
 
+user_challenges = sa.Table(
+    "user_challenges",
+    db.metadata,
+    sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id"), primary_key=True),
+    sa.Column("challenge_id", sa.Integer, sa.ForeignKey("challenges.id"), primary_key=True)
+)
+
 # ---------------------------
 # Models
 # ---------------------------
@@ -74,6 +83,16 @@ class User(UserMixin, db.Model):
     admin_of_groups: so.Mapped[list["Group"]] = so.relationship(
         secondary=group_admins,
         back_populates="admins"
+    )
+
+    challenges: so.Mapped[list["Challenge"]] = so.relationship(
+        secondary=user_challenges,
+        back_populates="participants"
+    )
+
+    joined_challenges: so.Mapped[list["Challenge"]] = so.relationship(
+        secondary=user_challenges,
+        back_populates="participants"
     )
 
     def __repr__(self):
@@ -132,6 +151,28 @@ class Group(db.Model):
     def __repr__(self):
         return f"<Group {self.name}>"
 
+
+
+
+class Challenge(db.Model):
+    __tablename__ = "challenges"
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    description: so.Mapped[str] = so.mapped_column(sa.Text, nullable=True)
+
+    start_date: so.Mapped[datetime] = so.mapped_column(default=datetime.utcnow)
+    end_date: so.Mapped[datetime] = so.mapped_column(nullable=True)
+
+    is_active: so.Mapped[bool] = so.mapped_column(default=True)
+
+    participants: so.Mapped[list["User"]] = so.relationship(
+        secondary=user_challenges,
+        back_populates="joined_challenges"
+    )
+
+    def __repr__(self):
+        return f"<Challenge {self.name}>"
 
 
 @login.user_loader
