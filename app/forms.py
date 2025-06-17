@@ -1,6 +1,13 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
+from wtforms import DateField, FloatField, IntegerField, SelectMultipleField
+from wtforms import DateField, DecimalField, SelectMultipleField, IntegerField
+from wtforms.validators import DataRequired, NumberRange
+from wtforms.widgets import ListWidget, CheckboxInput
+from flask_wtf import FlaskForm
+from wtforms import DecimalField, IntegerField, DateField, SubmitField
+from wtforms.validators import DataRequired, NumberRange
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[
@@ -33,3 +40,22 @@ class RegisterForm(FlaskForm):
     ])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Register')
+
+class LogActivityForm(FlaskForm):
+    date = DateField('Date', validators=[DataRequired()])
+    distance = DecimalField('Distance (km)', validators=[DataRequired(), NumberRange(min=0.1)])
+    hours = IntegerField('Hours', default=0, validators=[NumberRange(min=0)])
+    minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0, max=59)])
+
+    groups = SelectMultipleField('Log to Groups', coerce=int)
+    challenges = SelectMultipleField('Log to Challenges', coerce=int)
+
+class EditRunForm(FlaskForm):
+    date = DateField('Date', validators=[DataRequired()])
+    distance = DecimalField('Distance (km)', validators=[DataRequired(), NumberRange(min=0.1)])
+    hours = IntegerField('Hours', default=0, validators=[NumberRange(min=0)])
+    minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0)])
+    submit = SubmitField('Save Changes')
+
+class DeleteRunForm(FlaskForm):
+    submit = SubmitField('Delete')

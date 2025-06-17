@@ -34,8 +34,11 @@
               {% else %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="{{ url_for('static', filename='img/avatar.jpg') }}" class="rounded-circle me-2" width="36" height="36" alt="Avatar">
+                    <div class="avatar-circle bg-dark text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 36px; height: 36px; font-weight: bold;">
+                      {{ current_user.username[0]|upper }}
+                    </div>
                     <span class="fw-semibold">{{ current_user.username }}</span>
+
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
                     <li><a class="dropdown-item" href="#"">My activities</a></li>

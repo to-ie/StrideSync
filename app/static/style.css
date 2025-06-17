@@ -83,10 +83,17 @@ a:hover {
     color: #f33e78;
 }
 
-.btn-soft {
+.btn-soft, .btn-soft-white {
     background: white;
     border: 1px solid #ccc;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+
+.btn-soft-white:hover{
+  background-color: #eeeeee;
+  border: 1px solid #ccc;
+
 }
 
 .feature-card {

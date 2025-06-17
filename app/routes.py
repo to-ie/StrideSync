@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from app import db
 from flask import request
 from urllib.parse import urlsplit
-from app.forms import RegisterForm
+from app.forms import RegisterForm, LogActivityForm
 from app.models import User, UserRole, Run
 from flask_login import logout_user
 from app.email import send_verification_email
@@ -15,7 +15,9 @@ from datetime import datetime, timedelta
 from calendar import month_abbr
 from collections import defaultdict
 from flask_login import login_required, current_user
-
+from flask import session
+from flask import abort
+from app.forms import EditRunForm, DeleteRunForm
 
 @app.route('/')
 @app.route('/index')
@@ -36,24 +38,31 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        if current_user.is_verified:
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Please verify your email before continuing.', 'warning')
+            return redirect(url_for('logout'))
+
     form = LoginForm()
     if form.validate_on_submit():
         email_input = form.email.data.strip().lower()
-        user = db.session.scalar(
-            sa.select(User).where(User.email == email_input)
-        )
+        user = db.session.scalar(sa.select(User).where(User.email == email_input))
+
         if user is None or not user.check_password(form.password.data):
             flash('Invalid email or password.', 'danger')
             return redirect(url_for('login'))
+
         if not user.is_verified:
             flash('Please verify your email before logging in.', 'warning')
             return redirect(url_for('login'))
+
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
-            next_page = url_for('dashboard') 
+            next_page = url_for('dashboard')
         return redirect(next_page)
+
     return render_template('login.html', form=form)
 
 @app.route('/logout')
@@ -87,10 +96,9 @@ def register():
         db.session.add(user)
         db.session.commit()
         send_verification_email(user)
-        login_user(user, remember=form.remember_me.data)
-        flash('Your account was created! Please check your inbox to verify your email.', 'success')
-        return redirect(url_for('index'))
-    return render_template('register.html', title='Register', form=form)
+        flash('Your account was created! Please check your inbox to verify your email before logging in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html', form=form)
 
 
 @app.route('/verify/<token>')
@@ -120,24 +128,20 @@ def datetimeformat(value, format='%d-%m-%y'):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch user's runs
     runs = db.session.scalars(
         sa.select(Run).where(Run.user_id == current_user.id)
     ).all()
 
-    # Create dictionary: {date: total_distance}
     distance_by_date = {}
     for run in runs:
         run_date = run.date.date()
         distance_by_date[run_date] = distance_by_date.get(run_date, 0) + run.distance
 
-    # Align to most recent Monday, 365 days ago
     today = datetime.utcnow().date()
     start_date = today - timedelta(days=364)
-    while start_date.weekday() != 0:  # Make sure week starts on Monday
+    while start_date.weekday() != 0:
         start_date -= timedelta(days=1)
 
-    # Build heatmap grid (53 weeks × 7 days)
     heatmap_cells = []
     month_labels = []
     current_month = None
@@ -146,7 +150,6 @@ def dashboard():
         column = []
         week_start = start_date + timedelta(weeks=week)
 
-        # Month label (for first day of the week)
         if week_start.month != current_month:
             month_labels.append(month_abbr[week_start.month])
             current_month = week_start.month
@@ -163,10 +166,8 @@ def dashboard():
                     "active": date in distance_by_date,
                     "distance": distance_by_date.get(date, 0)
                 })
-
         heatmap_cells.append(column)
 
-    # Recent 5 runs
     recent_runs = db.session.scalars(
         sa.select(Run)
         .where(Run.user_id == current_user.id)
@@ -174,17 +175,94 @@ def dashboard():
         .limit(5)
     ).all()
 
-    # Active challenges
     live_challenges = db.session.scalars(
         sa.select(Challenge).where(Challenge.is_active == True)
     ).all()
+
+    form = LogActivityForm()
+    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
+    form.challenges.choices = [(c.id, c.name) for c in live_challenges]
+    edit_form = EditRunForm()
+    delete_form = DeleteRunForm()
 
     return render_template(
         "dashboard.html",
         user=current_user,
         runs=runs,
         recent_runs=recent_runs,
-        live_challenges=live_challenges,
         heatmap_cells=heatmap_cells,
-        month_labels=month_labels
+        month_labels=month_labels,
+        live_challenges=live_challenges,
+        form=form,
+        edit_form=edit_form,
+        delete_form=delete_form
     )
+
+@app.route('/log_activity', methods=['POST'])
+@login_required
+def log_activity():
+    form = LogActivityForm()
+    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
+    live_challenges = db.session.scalars(
+        sa.select(Challenge).where(Challenge.is_active == True)
+    ).all()
+    form.challenges.choices = [(c.id, c.name) for c in live_challenges]
+
+    if form.validate_on_submit():
+        # Convert Decimal to float
+        distance = float(form.distance.data)
+        total_seconds = (form.hours.data or 0) * 3600 + (form.minutes.data or 0) * 60
+
+        if total_seconds == 0 or distance <= 0:
+            flash("Time and distance must be greater than zero.", "danger")
+            session["open_activity_modal"] = True
+            return redirect(url_for('dashboard'))
+
+        pace = total_seconds / distance
+
+        run = Run(
+            user_id=current_user.id,
+            date=form.date.data,
+            distance=distance,
+            time=total_seconds,
+            pace=pace
+        )
+        db.session.add(run)
+        db.session.commit()
+        flash("Activity logged successfully!", "success")
+        session.pop("open_activity_modal", None)
+        return redirect(url_for('dashboard'))
+
+    flash("There was an error logging your activity.", "danger")
+    session["open_activity_modal"] = True
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/edit_run/<int:run_id>', methods=['POST'])
+@login_required
+def edit_run(run_id):
+    run = db.session.get(Run, run_id)
+    if run and run.user_id == current_user.id:
+        date = request.form.get('date')
+        distance = float(request.form.get('distance'))
+        time = int(request.form.get('time')) * 60  # Convert to seconds
+        pace = round(time / distance, 2) if distance > 0 else 0
+
+        run.date = datetime.strptime(date, "%Y-%m-%d")
+        run.distance = distance
+        run.time = time
+        run.pace = pace
+
+        db.session.commit()
+        flash('Run updated.', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete_run/<int:run_id>', methods=['POST'])
+@login_required
+def delete_run(run_id):
+    run = db.session.get(Run, run_id)
+    if run and run.user_id == current_user.id:
+        db.session.delete(run)
+        db.session.commit()
+        flash('Run deleted.', 'info')
+    return redirect(url_for('dashboard'))
