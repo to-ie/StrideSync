@@ -301,6 +301,12 @@ def log_activity():
 @login_required
 def edit_run(run_id):
     run = db.session.get(Run, run_id)
+
+    if not run or run.user_id != current_user.id:
+        flash("You are not authorized to edit this run.", "warning") 
+        return redirect(url_for('dashboard')) 
+
+
     if run and run.user_id == current_user.id:
         date = request.form.get('date')
         distance = float(request.form.get('distance'))
@@ -364,7 +370,6 @@ def create_group():
         create_group_form=create_group_form
     )
 
-from app.models import run_groups  # Ensure this import is present
 
 @app.route('/groups/<int:group_id>')
 @login_required
@@ -372,7 +377,14 @@ def view_group(group_id):
     group = db.session.get(Group, group_id)
     if not group:
         abort(404)
+    
 
+    # Check if the current user is part of the group
+    if current_user not in group.members:
+        flash("You are not a member of this group.", "warning")  #
+        return redirect(url_for('dashboard')) 
+
+        
     # ✅ Top 5 by total distance (group-linked runs only)
     top_distance = db.session.execute(
         sa.select(User.username, sa.func.sum(Run.distance).label('total_distance'))
