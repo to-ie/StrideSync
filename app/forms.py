@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 from wtforms import DateField, FloatField, IntegerField, SelectMultipleField
 from wtforms import DateField, DecimalField, SelectMultipleField, IntegerField
@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired, NumberRange
 from wtforms.widgets import ListWidget, CheckboxInput
 from flask_wtf import FlaskForm
 from wtforms import DecimalField, IntegerField, DateField, SubmitField
-from wtforms.validators import DataRequired, NumberRange
+from wtforms.validators import DataRequired, NumberRange, Optional
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[
@@ -59,3 +59,8 @@ class EditRunForm(FlaskForm):
 
 class DeleteRunForm(FlaskForm):
     submit = SubmitField('Delete')
+
+class CreateGroupForm(FlaskForm):
+    name = StringField("Group Name", validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField("Description", validators=[Optional(), Length(max=500)])
+    submit = SubmitField("Create Group")

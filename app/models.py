@@ -92,7 +92,8 @@ class User(UserMixin, db.Model):
 
     joined_challenges: so.Mapped[list["Challenge"]] = so.relationship(
         secondary=user_challenges,
-        back_populates="participants"
+        back_populates="participants",
+        overlaps="challenges"
     )
 
     def __repr__(self):

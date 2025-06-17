@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="mb-3">{{ group.name }}</h2>
+  <p class="text-muted">{{ group.description }}</p>
+
+  <div class="row">
+    <!-- Group Info -->
+    <div class="col-md-8">
+      <h5>Group Activity</h5>
+      <!-- Future: filter group runs, goals, challenges here -->
+      <p class="text-muted">Group runs and stats will be displayed here.</p>
+    </div>
+
+    <!-- Members -->
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Members</strong>
+          {% if is_admin %}
+          <a href="#" class="btn btn-sm btn-outline-primary">Invite</a>
+          {% endif %}
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for member in group.members %}
+          <li class="list-group-item">{{ member.username }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

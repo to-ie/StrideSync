@@ -10,14 +10,15 @@ from app.forms import RegisterForm, LogActivityForm
 from app.models import User, UserRole, Run
 from flask_login import logout_user
 from app.email import send_verification_email
-from app.models import Run, Challenge
+from app.models import Run, Challenge, Group
 from datetime import datetime, timedelta
 from calendar import month_abbr
 from collections import defaultdict
 from flask_login import login_required, current_user
 from flask import session
 from flask import abort
-from app.forms import EditRunForm, DeleteRunForm
+from app.forms import EditRunForm, DeleteRunForm, CreateGroupForm
+
 
 @app.route('/')
 @app.route('/index')
@@ -184,6 +185,8 @@ def dashboard():
     form.challenges.choices = [(c.id, c.name) for c in live_challenges]
     edit_form = EditRunForm()
     delete_form = DeleteRunForm()
+    create_group_form = CreateGroupForm()
+
 
     return render_template(
         "dashboard.html",
@@ -195,7 +198,8 @@ def dashboard():
         live_challenges=live_challenges,
         form=form,
         edit_form=edit_form,
-        delete_form=delete_form
+        delete_form=delete_form, 
+        create_group_form=create_group_form
     )
 
 @app.route('/log_activity', methods=['POST'])
@@ -266,3 +270,49 @@ def delete_run(run_id):
         db.session.commit()
         flash('Run deleted.', 'info')
     return redirect(url_for('dashboard'))
+
+@app.route('/groups/create', methods=['POST'])
+@login_required
+def create_group():
+    create_group_form = CreateGroupForm()
+    if create_group_form.validate_on_submit():
+        group = Group(
+            name=create_group_form.name.data.strip(),
+            description=create_group_form.description.data.strip()
+        )
+        group.members.append(current_user)
+        group.admins.append(current_user)
+        db.session.add(group)
+        db.session.commit()
+        return redirect(url_for('view_group', group_id=group.id))
+
+    flash("Failed to create group. Please check the form.", "danger")
+    session['open_group_modal'] = True
+
+    return render_template(
+        "dashboard.html",
+        user=current_user,
+        runs=runs,
+        recent_runs=recent_runs,
+        heatmap_cells=heatmap_cells,
+        month_labels=month_labels,
+        live_challenges=live_challenges,
+        form=LogActivityForm(),
+        edit_form=EditRunForm(),
+        delete_form=DeleteRunForm(),
+        create_group_form=create_group_form
+    )
+
+
+@app.route('/groups/<int:group_id>')
+@login_required
+def view_group(group_id):
+    group = db.session.get(Group, group_id)
+    if not group:
+        abort(404)
+
+    return render_template(
+        "group.html",
+        group=group,
+        is_admin=current_user in group.admins,
+    )
