@@ -5,16 +5,13 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 
-
-
 # Create extensions (not tied to app yet)
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
+mail = Mail()
 
-login.login_view = 'login'
-
-# Create app instance
+# Create Flask app instance
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -22,6 +19,7 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate.init_app(app, db)
 login.init_app(app)
+mail.init_app(app)
 
-# Import routes AFTER app is created to avoid circular import
+# Import routes and models AFTER initializing extensions
 from app import routes, models

@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import db, login_manager
+from app import db, login
 
 # ---------------------------
 # Enums
@@ -105,8 +105,8 @@ class Group(db.Model):
         return f"<Group {self.name}>"
 
 
-@login_manager.user_loader
-def load_user(id):
+@login.user_loader 
+def load_user(id): 
     return db.session.get(User, int(id))
 
 
