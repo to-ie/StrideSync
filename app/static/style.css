@@ -272,15 +272,24 @@ footer a:hover {
   color: #888;
 }
 
+.members-card{
+  margin-top: 17px;
+}
 
+.active > .page-link, .page-link.active {
+  z-index: 3;
+  color: #FFF !important;
+  background-color: #f33e78 !important;
+  border-color: #f33e78 !important;
+}
 
+.nav-link {
+  color: #f33e78 !important;
+}
 
-
-
-
-
-
-
+.page-link {
+  color: #000 !important;
+}
 
 
 

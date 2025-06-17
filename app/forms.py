@@ -8,6 +8,8 @@ from wtforms.widgets import ListWidget, CheckboxInput
 from flask_wtf import FlaskForm
 from wtforms import DecimalField, IntegerField, DateField, SubmitField
 from wtforms.validators import DataRequired, NumberRange, Optional
+from wtforms import SelectMultipleField
+from wtforms.validators import DataRequired, NumberRange
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[
@@ -54,9 +56,13 @@ class EditRunForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired()])
     distance = DecimalField('Distance (km)', validators=[DataRequired(), NumberRange(min=0.1)])
     hours = IntegerField('Hours', default=0, validators=[NumberRange(min=0)])
-    minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0)])
-    submit = SubmitField('Save Changes')
+    minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0, max=59)])
+    
+    groups = SelectMultipleField('Log to Groups', coerce=int)
+    challenges = SelectMultipleField('Log to Challenges', coerce=int)
 
+    submit = SubmitField('Save Changes')
+        
 class DeleteRunForm(FlaskForm):
     submit = SubmitField('Delete')
 

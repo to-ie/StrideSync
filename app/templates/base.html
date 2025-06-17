@@ -41,9 +41,9 @@
 
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('dashboard') }}"">Dashboard</a></li>
                     <li><a class="dropdown-item" href="#"">My activities</a></li>
                     <li><a class="dropdown-item" href="#"">My groups</a></li>
-                    <li><a class="dropdown-item" href="#">Join a challenge</a></li>
                     <li><a class="dropdown-item" href="#">My account</a></li>
                     {% if current_user.role.name == 'ADMIN' %}
                       <li><hr class="dropdown-divider"></li>
@@ -118,6 +118,44 @@
         observer.observe(el);
       });
     </script>
+
+
+    {% if group %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      function loadRuns(userId, page = 1) {
+        const container = document.querySelector(`#user-${userId} .run-list`);
+        fetch(`/groups/{{ group.id }}/member/${userId}/runs?page=${page}`)
+          .then(res => res.text())
+          .then(html => {
+            container.innerHTML = html;
+
+            container.querySelectorAll('.page-link').forEach(link => {
+              link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetPage = this.getAttribute('data-page');
+                const targetUser = this.getAttribute('data-user');
+                loadRuns(targetUser, targetPage);
+              });
+            });
+          });
+      }
+
+      document.querySelectorAll('.tab-pane.show.active').forEach(tab => {
+        const userId = tab.getAttribute('data-user-id');
+        loadRuns(userId);
+      });
+
+      document.querySelectorAll('#memberTabs button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (e) {
+          const userId = this.getAttribute('data-bs-target').split('-')[1];
+          loadRuns(userId);
+        });
+      });
+    });
+    </script>
+    {% endif %}
+
 
 
 

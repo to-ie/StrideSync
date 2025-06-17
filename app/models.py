@@ -149,6 +149,12 @@ class Group(db.Model):
         back_populates="groups"
     )
 
+    invites: so.Mapped[list["GroupInvite"]] = so.relationship(
+        "GroupInvite",
+        back_populates="group",
+        cascade="all, delete-orphan"
+    )
+
     def __repr__(self):
         return f"<Group {self.name}>"
 
@@ -179,3 +185,20 @@ class Challenge(db.Model):
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
+class GroupInvite(db.Model):
+    __tablename__ = "group_invite"
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    email = sa.Column(sa.String(120), nullable=False)
+    token = sa.Column(sa.String(128), nullable=False, unique=True)
+    group_id = sa.Column(sa.Integer, sa.ForeignKey('groups.id'), nullable=False)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+
+    group: so.Mapped["Group"] = so.relationship(
+        "Group",
+        back_populates="invites"
+    )
+
+    def __repr__(self):
+        return f"<GroupInvite {self.email} -> Group {self.group_id}>"
