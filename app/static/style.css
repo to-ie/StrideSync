@@ -1,190 +1,123 @@
-body {
-    background-color: #f5f5f5;
-}
-
+/* --------------------------------------------------
+   1. Base Layout and Structure
+-------------------------------------------------- */
 html, body {
   height: 100%;
   margin: 0;
   display: flex;
   flex-direction: column;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f5f5f5;
 }
 
 main {
   flex: 1;
 }
 
-
-footer {
-    background-color: #333;
-}
+/* --------------------------------------------------
+   2. Typography
+-------------------------------------------------- */
 h4 {
-    font-weight: 700;
-    color: #333;
+  font-weight: 700;
+  color: #333;
 }
 
 p {
-    /* font-size: 17px; */
+  /* font-size: 17px; */
 }
 
 a {
-    color: #f33e78;
+  color: #f33e78;
 }
 
-a:hover {
-    color: #f75487;
+a:hover,
+footer a:hover {
+  color: #f75487;
+  text-decoration: underline;
 }
+
+/* --------------------------------------------------
+   3. Branding & Logo
+-------------------------------------------------- */
 .logo {
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -1.3px;
-    margin-top: 15px;
-}
-.up {
-    margin-top: -10px;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1.3px;
+  margin-top: 15px;
 }
 
-.up40 {
-  transform: translateY(40px);
-  opacity: 0;
-  transition: all 0.8s ease;
+.logo-container {
+  color: unset;
 }
 
-.up40.visible {
-  transform: none;
-  opacity: 1;
+.logo-container:hover {
+  color: unset;
 }
 
-.btn-outline-dark {
-    border-style: solid;
-    border-width: 2px;
-    padding: 10px 30px !important;
-    border-radius: 90px;
-    text-transform: uppercase;
-    font-size: 14px;
-    font-weight: 800;
-}
-
-.btn-outline-dark:hover {
-    color: #FFFFFF !important;
-}
-
+/* --------------------------------------------------
+   4. Hero Section
+-------------------------------------------------- */
 .hero-section {
-    margin-bottom: -100px;
+  margin-bottom: -100px;
 }
 
-.hero-title{
-    font-weight: 900 !important;
-    font-size: 60px;
-    letter-spacing: -3px;
-    line-height: 60px;
+.hero-title {
+  font-weight: 900 !important;
+  font-size: 60px;
+  letter-spacing: -3px;
+  line-height: 60px;
 }
 
 .hero-title span {
-    color: #f33e78;
+  color: #f33e78;
 }
 
-.btn-soft, .btn-soft-white {
-    background: white;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+/* --------------------------------------------------
+   5. Buttons
+-------------------------------------------------- */
+.btn-outline-dark {
+  border-style: solid;
+  border-width: 2px;
+  padding: 10px 30px !important;
+  border-radius: 90px;
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 800;
 }
 
+.btn-dark:hover {
+  text-decoration: none;
+}
 
-.btn-soft-white:hover{
-  background-color: #eeeeee;
+.btn-outline-dark:hover {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+.btn-outline-light:hover, .btn-lg:hover {
+  text-decoration: none;
+}
+
+.btn-soft,
+.btn-soft-white {
+  background: white;
   border: 1px solid #ccc;
-
-}
-
-.feature-card {
-    border-radius: 20px;
-    padding: 20px;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    color: #FFF;
-    font-size: 17px;
-
-}
-
-.feature-card h3{
-    font-size: 40px;
-    font-weight: 700;
-    letter-spacing: -2px;
-}
-
-
-.icon-circle {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #eee;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-}
-
-.app-banner {
-    background-color: #fff;
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
 .btn-soft:hover {
     background-color: #f33e78;
-    color: #fff;
+    color: #eee;
+    text-decoration: none;
 }
 
-.section-title{
-    font-weight: 700;
-    letter-spacing: -2px;
-    font-size: 40px;
-
-}
-
-.section-title span {
-    color: #f33e78;
-}
-
-.feature-box img {
-  width: 40px;
-  height: 40px;
-}
-
-.feature-box{
-    border-radius: 20px !important;
-}
-
-.transparency50{
-    opacity: 30%;
-}
-
-.bg-pink {
-  background-color: #f33e78;
-}
-
-.offset-image {
-  max-width: 500px;
-  margin-left: -100px; /* how far left it sticks out */
-}
-
-@media (max-width: 991px) {
-  .sneak-img-wrapper {
-    display: none !important; /* hide image on mobile for spacing */
-  }
-}
-
-.sneakpeak{
-    margin-bottom: 100px;
-}
-
-footer a:hover {
-  text-decoration: underline;
-  color: #f33e78;
+.btn-soft-white:hover {
+  background-color: #eeeeee;
+  color: #fff;
+  border: 1px solid #ccc;
 }
 
 .cta-button {
@@ -200,25 +133,104 @@ footer a:hover {
   color: #fff;
 }
 
-.logo-container{
-  color: unset; 
+.dropdown-item:hover{
+  text-decoration: none;
 }
 
-.logo-container:hover{
-  color: unset; 
+/* --------------------------------------------------
+   6. Cards & Features
+-------------------------------------------------- */
+.feature-card {
+  border-radius: 20px;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  color: #fff;
+  font-size: 17px;
 }
 
-.form-control.wide {
-  max-width: 100%;
-  font-size: 1.1rem;
-  padding: 1rem;
+.feature-card h3 {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -2px;
 }
 
-.invalid-feedback{
-  margin-left: 15px;
+.feature-box {
+  border-radius: 20px !important;
+  background-color: white;
+  padding: 20px;
 }
 
+.feature-box img {
+  width: 40px;
+  height: 40px;
+}
 
+.section-title {
+  font-weight: 700;
+  letter-spacing: -2px;
+  font-size: 40px;
+}
+
+.section-title span {
+  color: #f33e78;
+}
+
+.icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.app-banner {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* --------------------------------------------------
+   7. Utility Classes
+-------------------------------------------------- */
+.up {
+  margin-top: -10px;
+}
+
+.up40 {
+  transform: translateY(40px);
+  opacity: 0;
+  transition: all 0.8s ease;
+}
+
+.up40.visible {
+  transform: none;
+  opacity: 1;
+}
+
+.transparency50 {
+  opacity: 30%;
+}
+
+.bg-pink {
+  background-color: #f33e78;
+}
+
+.offset-image {
+  max-width: 500px;
+  margin-left: -100px;
+}
+
+/* --------------------------------------------------
+   8. Navbar & Navigation
+-------------------------------------------------- */
 .navbar .dropdown-menu {
   min-width: 200px;
   font-size: 0.95rem;
@@ -228,7 +240,41 @@ footer a:hover {
   background-color: #f8f9fa;
 }
 
+.nav-link {
+  color: #f33e78 !important;
+}
 
+/* --------------------------------------------------
+   9. Pagination
+-------------------------------------------------- */
+.active > .page-link,
+.page-link.active {
+  z-index: 3;
+  color: #fff !important;
+  background-color: #f33e78 !important;
+  border-color: #f33e78 !important;
+}
+
+.page-link {
+  color: #000 !important;
+}
+
+/* --------------------------------------------------
+   10. Forms
+-------------------------------------------------- */
+.form-control.wide {
+  max-width: 100%;
+  font-size: 1.1rem;
+  padding: 1rem;
+}
+
+.invalid-feedback {
+  margin-left: 15px;
+}
+
+/* --------------------------------------------------
+   11. Heatmap
+-------------------------------------------------- */
 .heatmap {
   display: flex;
   flex-direction: row;
@@ -272,37 +318,24 @@ footer a:hover {
   color: #888;
 }
 
-.members-card{
+/* --------------------------------------------------
+   12. Misc Sections
+-------------------------------------------------- */
+footer {
+  background-color: #333;
+}
+
+.members-card {
   margin-top: 17px;
 }
 
-.active > .page-link, .page-link.active {
-  z-index: 3;
-  color: #FFF !important;
-  background-color: #f33e78 !important;
-  border-color: #f33e78 !important;
+.sneakpeak {
+  margin-bottom: 100px;
 }
 
-.nav-link {
-  color: #f33e78 !important;
-}
-
-.page-link {
-  color: #000 !important;
-}
-
-
-
-
-
-
-
-
-
-/* animations */
-
-/* Fade-in animation on scroll */
-/* Keyframes */
+/* --------------------------------------------------
+   13. Animations
+-------------------------------------------------- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -314,7 +347,6 @@ footer a:hover {
   }
 }
 
-/* Apply fade effect on scroll */
 .animate-on-scroll {
   opacity: 0;
   transform: translateY(30px);
@@ -326,20 +358,16 @@ footer a:hover {
   transform: translateY(0);
 }
 
-/* Optional: staggered reveal */
-.delay-1 {
-  transition-delay: 0.2s;
-}
-.delay-2 {
-  transition-delay: 0.4s;
-}
-.delay-3 {
-  transition-delay: 0.6s;
-}
-.delay-4 {
-  transition-delay: 0.8s;
-}
+.delay-1 { transition-delay: 0.2s; }
+.delay-2 { transition-delay: 0.4s; }
+.delay-3 { transition-delay: 0.6s; }
+.delay-4 { transition-delay: 0.8s; }
 
-html {
-  scroll-behavior: smooth;
+/* --------------------------------------------------
+   14. Media Queries
+-------------------------------------------------- */
+@media (max-width: 991px) {
+  .sneak-img-wrapper {
+    display: none !important;
+  }
 }

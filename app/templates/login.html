@@ -16,27 +16,24 @@
           Good to see <span>you</span> again!
         </h1>
 
-        <div class="my-2"></div>
-
-
         <form action="" method="post" novalidate class="w-100" style="max-width: 600px;">
           {{ form.hidden_tag() }}
 
           <div class="mb-4">
             {{ form.email(class="form-control wide", placeholder="Enter your email address") }}
             {% for error in form.email.errors %}
-            <div class="invalid-feedback d-block">
+              <div class="invalid-feedback d-block">
                 {{ error }}
-            </div>
+              </div>
             {% endfor %}
           </div>
 
           <div class="mb-4">
             {{ form.password(class="form-control wide", placeholder="Enter your password") }}
             {% for error in form.password.errors %}
-            <div class="invalid-feedback d-block">
+              <div class="invalid-feedback d-block">
                 {{ error }}
-            </div>
+              </div>
             {% endfor %}
           </div>
 
@@ -52,10 +49,10 @@
       </div>
 
       <!-- Register Panel -->
-      <div class="col-lg-6 d-flex align-items-center animate-on-scroll"> 
+      <div class="col-lg-6 d-flex align-items-center animate-on-scroll">
         <div class="p-5 shadow-sm border rounded bg-light w-100" style="max-width: 600px; margin-top: 115px;">
           <h2 class="mb-3">New here?</h2>
-          <p class="lead mb-4">Take the first step with StrideSync — and let’s run better, together.</p>
+          <p class="lead mb-4">Take the first step with StrideSync — and start your journey today.</p>
           <a class="btn btn-soft btn-lg px-4" href="/register">CREATE AN ACCOUNT</a>
         </div>
       </div>

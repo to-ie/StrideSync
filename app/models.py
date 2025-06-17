@@ -1,16 +1,11 @@
-from typing import Optional
 import secrets
 import enum
-
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import db, login
-
-from datetime import datetime, timezone
-
+from app import db, login_manager
 
 # ---------------------------
 # Enums
@@ -19,6 +14,7 @@ from datetime import datetime, timezone
 class UserRole(enum.Enum):
     ADMIN = "admin"
     USER = "user"
+
 
 # ---------------------------
 # Association Tables
@@ -45,12 +41,6 @@ group_admins = sa.Table(
     sa.Column("group_id", sa.ForeignKey("groups.id"), primary_key=True),
 )
 
-user_challenges = sa.Table(
-    "user_challenges",
-    db.metadata,
-    sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id"), primary_key=True),
-    sa.Column("challenge_id", sa.Integer, sa.ForeignKey("challenges.id"), primary_key=True)
-)
 
 # ---------------------------
 # Models
@@ -59,46 +49,21 @@ user_challenges = sa.Table(
 class User(UserMixin, db.Model):
     __tablename__ = "users"
 
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    id = sa.Column(sa.Integer, primary_key=True)
+    email = sa.Column(sa.String(120), unique=True, nullable=False, index=True)
+    password_hash = sa.Column(sa.String(256))
+    username = sa.Column(sa.String(64), unique=True, nullable=False, index=True)
+    role = sa.Column(sa.Enum(UserRole), default=UserRole.USER, nullable=False)
+    is_verified = sa.Column(sa.Boolean, default=False)
+    verification_token = sa.Column(sa.String(128), nullable=False, default=lambda: secrets.token_urlsafe(32))
 
-    email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True, unique=True, nullable=False)
-    password_hash: so.Mapped[str] = so.mapped_column(sa.String(256))
-
-    username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True, unique=True, nullable=False)
-    role: so.Mapped[UserRole] = so.mapped_column(sa.Enum(UserRole), default=UserRole.USER, nullable=False)
-
-    is_verified: so.Mapped[bool] = so.mapped_column(default=False)
-    verification_token: so.Mapped[str] = so.mapped_column(default=lambda: secrets.token_urlsafe(32), nullable=False)
-
-    runs: so.Mapped[list["Run"]] = so.relationship(
-        back_populates="user",
-        cascade="all, delete-orphan"
-    )
-
-    groups: so.Mapped[list["Group"]] = so.relationship(
-        secondary=user_groups,
-        back_populates="members"
-    )
-
-    admin_of_groups: so.Mapped[list["Group"]] = so.relationship(
-        secondary=group_admins,
-        back_populates="admins"
-    )
-
-    challenges: so.Mapped[list["Challenge"]] = so.relationship(
-        secondary=user_challenges,
-        back_populates="participants"
-    )
-
-    joined_challenges: so.Mapped[list["Challenge"]] = so.relationship(
-        secondary=user_challenges,
-        back_populates="participants",
-        overlaps="challenges"
-    )
+    runs = so.relationship("Run", back_populates="user", cascade="all, delete-orphan")
+    groups = so.relationship("Group", secondary=user_groups, back_populates="members")
+    admin_of_groups = so.relationship("Group", secondary=group_admins, back_populates="admins")
 
     def __repr__(self):
         return f"<User {self.email} - {self.role.name} - {'Verified' if self.is_verified else 'Unverified'}>"
-    
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -109,19 +74,16 @@ class User(UserMixin, db.Model):
 class Run(db.Model):
     __tablename__ = "runs"
 
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    date: so.Mapped[datetime] = so.mapped_column(sa.DateTime(timezone=True), index=True)
-    distance: so.Mapped[int] = so.mapped_column(sa.Integer)  # meters
-    time: so.Mapped[int] = so.mapped_column(sa.Integer)      # seconds (duration)
-    pace: so.Mapped[int] = so.mapped_column(sa.Integer)      # seconds per km
+    id = sa.Column(sa.Integer, primary_key=True)
+    date = sa.Column(sa.DateTime(timezone=True), index=True)
+    distance = sa.Column(sa.Integer)  # meters
+    time = sa.Column(sa.Integer)      # seconds (duration)
+    pace = sa.Column(sa.Integer)      # seconds per km
 
-    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey("users.id"), index=True)
-    user: so.Mapped["User"] = so.relationship(back_populates="runs")
+    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), index=True)
+    user = so.relationship("User", back_populates="runs")
 
-    groups: so.Mapped[list["Group"]] = so.relationship(
-        secondary=run_groups,
-        back_populates="runs"
-    )
+    groups = so.relationship("Group", secondary=run_groups, back_populates="runs")
 
     def __repr__(self):
         return f"<Run {self.id} - User {self.user_id}>"
@@ -130,61 +92,23 @@ class Run(db.Model):
 class Group(db.Model):
     __tablename__ = "groups"
 
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    name: so.Mapped[str] = so.mapped_column(sa.String(100), unique=True, nullable=False)
-    description: so.Mapped[Optional[str]] = so.mapped_column(sa.Text)
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String(100), unique=True, nullable=False)
+    description = sa.Column(sa.Text)
 
-    members: so.Mapped[list["User"]] = so.relationship(
-        secondary=user_groups,
-        back_populates="groups"
-    )
-
-    admins: so.Mapped[list["User"]] = so.relationship(
-        secondary=group_admins,
-        back_populates="admin_of_groups"
-    )
-
-    runs: so.Mapped[list["Run"]] = so.relationship(
-        secondary=run_groups,
-        back_populates="groups"
-    )
-
-    invites: so.Mapped[list["GroupInvite"]] = so.relationship(
-        "GroupInvite",
-        back_populates="group",
-        cascade="all, delete-orphan"
-    )
+    members = so.relationship("User", secondary=user_groups, back_populates="groups")
+    admins = so.relationship("User", secondary=group_admins, back_populates="admin_of_groups")
+    runs = so.relationship("Run", secondary=run_groups, back_populates="groups")
+    invites = so.relationship("GroupInvite", back_populates="group", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Group {self.name}>"
 
 
-
-
-class Challenge(db.Model):
-    __tablename__ = "challenges"
-
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
-    description: so.Mapped[str] = so.mapped_column(sa.Text, nullable=True)
-
-    start_date: so.Mapped[datetime] = so.mapped_column(default=datetime.utcnow)
-    end_date: so.Mapped[datetime] = so.mapped_column(nullable=True)
-
-    is_active: so.Mapped[bool] = so.mapped_column(default=True)
-
-    participants: so.Mapped[list["User"]] = so.relationship(
-        secondary=user_challenges,
-        back_populates="joined_challenges"
-    )
-
-    def __repr__(self):
-        return f"<Challenge {self.name}>"
-
-
-@login.user_loader
+@login_manager.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
 
 class GroupInvite(db.Model):
     __tablename__ = "group_invite"
@@ -195,10 +119,7 @@ class GroupInvite(db.Model):
     group_id = sa.Column(sa.Integer, sa.ForeignKey('groups.id'), nullable=False)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
 
-    group: so.Mapped["Group"] = so.relationship(
-        "Group",
-        back_populates="invites"
-    )
+    group = so.relationship("Group", back_populates="invites")
 
     def __repr__(self):
         return f"<GroupInvite {self.email} -> Group {self.group_id}>"

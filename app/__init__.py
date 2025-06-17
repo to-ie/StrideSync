@@ -5,6 +5,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 
+
+
 # Create extensions (not tied to app yet)
 db = SQLAlchemy()
 migrate = Migrate()
@@ -12,13 +14,9 @@ login = LoginManager()
 
 login.login_view = 'login'
 
-# Email config
-mail = Mail()
-
 # Create app instance
 app = Flask(__name__)
 app.config.from_object(Config)
-mail.init_app(app)
 
 # Initialize extensions with the app
 db.init_app(app)

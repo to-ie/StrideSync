@@ -3,9 +3,11 @@
 <section class="py-5">
   <div class="container">
     <h1 class="display-4 fw-bold mb-4 hero-title">
-        Welcome back <span>{{ user.username }}</span> 👋
+      Welcome back <span>{{ user.username }}</span> 👋
     </h1>
-    <p class="lead mt-3 text-muted" style="margin-top: -20px !important; margin-bottom: 40px;">Great to see you back on StrideSync.</p>
+    <p class="lead mt-3 text-muted" style="margin-top: -20px !important; margin-bottom: 40px;">
+      Great to see you back on StrideSync.
+    </p>
 
     <!-- Activity Map -->
     <div class="mb-3">
@@ -15,7 +17,7 @@
           <i class="bi bi-plus-lg"></i> Log an activity
         </a>
       </div>
-      <div class="rounded border p-3 bg-white shadow-sm" style="overflow-x: auto; display: inline-block;">
+      <div class="rounded border p-3 bg-white shadow-sm" style="overflow-x: auto;">
         <div class="d-flex flex-column">
           <div class="d-flex mb-1" style="margin-left: 30px; gap: 4px;">
             <div style="width: 30px;"></div>
@@ -31,21 +33,21 @@
             </div>
             {% for week in heatmap_cells %}
               <div class="d-flex flex-column" style="gap: 4px;">
-              {% for cell in week %}
-                {% if cell %}
-                  <div
-                    title="{% if cell.active %}{{ '%.1f'|format(cell.distance) }} km on {{ cell.date.strftime('%d-%m-%y') }}{% else %}{{ cell.date.strftime('%d-%m-%y') }}{% endif %}"
-                    style="
-                      width: 14px;
-                      height: 14px;
-                      border-radius: 2px;
-                      background-color: {{ '#f33e78' if cell.active else '#e2e2e2' }};
-                      transition: background-color 0.2s;"
-                  ></div>
-                {% else %}
-                  <div style="width: 14px; height: 14px; background-color: transparent;"></div>
-                {% endif %}
-              {% endfor %}
+                {% for cell in week %}
+                  {% if cell %}
+                    <div
+                      title="{% if cell.active %}{{ '%.1f'|format(cell.distance) }} km on {{ cell.date.strftime('%d-%m-%y') }}{% else %}{{ cell.date.strftime('%d-%m-%y') }}{% endif %}"
+                      style="
+                        width: 14px;
+                        height: 14px;
+                        border-radius: 2px;
+                        background-color: {{ '#f33e78' if cell.active else '#e2e2e2' }};
+                        transition: background-color 0.2s;">
+                    </div>
+                  {% else %}
+                    <div style="width: 14px; height: 14px; background-color: transparent;"></div>
+                  {% endif %}
+                {% endfor %}
               </div>
             {% endfor %}
           </div>
@@ -57,25 +59,24 @@
     <div class="mb-5">
       <h5>Your recent activity</h5>
       {% if recent_runs %}
-      <div class="list-group shadow-sm">
-        {% for run in recent_runs %}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-          <div>
-            <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
-            <small class="text-muted">
-              {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
-              {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} /km
-            </small>
-          </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-soft-white" data-bs-toggle="modal" data-bs-target="#editRunModal{{ run.id }}">Edit</button>
-            <!-- Trigger Delete Modal -->
-            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRunModal{{ run.id }}">
-              Delete
-            </button>
+        <div class="list-group shadow-sm">
+          {% for run in recent_runs %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
+                <small class="text-muted">
+                  {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
+                  {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} /km
+                </small>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-soft-white" data-bs-toggle="modal" data-bs-target="#editRunModal{{ run.id }}">Edit</button>
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRunModal{{ run.id }}">Delete</button>
+              </div>
+            </div>
 
             <!-- Delete Run Modal -->
-            <div class="modal fade" id="deleteRunModal{{ run.id }}" tabindex="-1" aria-labelledby="deleteRunModalLabel{{ run.id }}" aria-hidden="true">
+            <div class="modal fade" id="deleteRunModal{{ run.id }}" tabindex="-1" aria-hidden="true">
               <div class="modal-dialog">
                 <form method="POST" action="{{ url_for('delete_run', run_id=run.id) }}">
                   {{ delete_form.hidden_tag() }}
@@ -96,59 +97,53 @@
               </div>
             </div>
 
-          </div>
-        </div>
-
-        <!-- Edit Modal -->
-        <div class="modal fade" id="editRunModal{{ run.id }}" tabindex="-1" aria-labelledby="editRunModalLabel{{ run.id }}" aria-hidden="true">
-          <div class="modal-dialog">
-            <form method="POST" action="{{ url_for('edit_run', run_id=run.id) }}">
-              {{ edit_form.hidden_tag() }}
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Edit Run</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <label>Date</label>
-                    <input type="date" name="date" value="{{ run.date.strftime('%Y-%m-%d') }}" class="form-control">
+            <!-- Edit Run Modal -->
+            <div class="modal fade" id="editRunModal{{ run.id }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog">
+                <form method="POST" action="{{ url_for('edit_run', run_id=run.id) }}">
+                  {{ edit_form.hidden_tag() }}
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Edit Run</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label>Date</label>
+                        <input type="date" name="date" value="{{ run.date.strftime('%Y-%m-%d') }}" class="form-control">
+                      </div>
+                      <div class="mb-3">
+                        <label>Distance (km)</label>
+                        <input type="number" step="0.1" name="distance" value="{{ run.distance }}" class="form-control">
+                      </div>
+                      <div class="mb-3">
+                        <label>Duration (minutes)</label>
+                        <input type="number" name="time" value="{{ run.time // 60 }}" class="form-control">
+                      </div>
+                      <div class="mb-3">
+                        <label>Groups</label>
+                        {% set selected_group_ids = run.groups | map(attribute='id') | list %}
+                        <select name="groups" class="form-select" multiple>
+                          {% for group in current_user.groups %}
+                            <option value="{{ group.id }}" {% if group.id in selected_group_ids %}selected{% endif %}>
+                              {{ group.name }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        {% if current_user.groups|length == 0 %}
+                          <small class="text-muted">You're not in any groups.</small>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="submit" class="btn btn-dark">Save changes</button>
+                    </div>
                   </div>
-                  <div class="mb-3">
-                    <label>Distance (km)</label>
-                    <input type="number" step="0.1" name="distance" value="{{ run.distance }}" class="form-control">
-                  </div>
-                  <div class="mb-3">
-                    <label>Duration (minutes)</label>
-                    <input type="number" name="time" value="{{ run.time // 60 }}" class="form-control">
-                  </div>
-
-                  <!-- Groups -->
-                  <div class="mb-3">
-                    <label>Groups</label>
-                    {% set selected_group_ids = run.groups | map(attribute='id') | list %}
-                    <select name="groups" class="form-select" multiple>
-                      {% for group in current_user.groups %}
-                        <option value="{{ group.id }}" {% if group.id in selected_group_ids %}selected{% endif %}>
-                          {{ group.name }}
-                        </option>
-                      {% endfor %}
-                    </select>
-                    {% if current_user.groups|length == 0 %}
-                      <small class="text-muted">You're not in any groups.</small>
-                    {% endif %}
-                  </div>
-
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-dark">Save changes</button>
-                </div>
+                </form>
               </div>
-            </form>
-          </div>
+            </div>
+          {% endfor %}
         </div>
-        {% endfor %}
-      </div>
       {% else %}
         <p class="text-muted">No recent activity found.</p>
       {% endif %}
@@ -169,7 +164,7 @@
             <h5 class="mb-1">{{ group.name }}</h5>
             <p class="small text-muted mb-2">{{ group.description[:80] }}...</p>
             {% if group in current_user.admin_of_groups %}
-              <span class="badge bg-warning text-dark">Admin</span>
+              <span class="badge bg-warning text-dark">Group admin</span>
             {% endif %}
             <a href="{{ url_for('view_group', group_id=group.id) }}" class="stretched-link" tabindex="-1" aria-hidden="true"></a>
           </div>
@@ -183,14 +178,14 @@
 </section>
 
 <!-- Log Activity Modal -->
-<div class="modal fade" id="logActivityModal" tabindex="-1" aria-labelledby="logActivityModalLabel" aria-hidden="true">
+<div class="modal fade" id="logActivityModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form method="POST" action="{{ url_for('log_activity') }}">
       {{ form.hidden_tag() }}
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Log New Activity</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
@@ -223,7 +218,6 @@
   </div>
 </div>
 
-<!-- Auto-open modal on form error -->
 {% if session.open_activity_modal %}
 <script>
   window.addEventListener("DOMContentLoaded", () => {
@@ -234,7 +228,7 @@
 {% endif %}
 
 <!-- Create Group Modal -->
-<div class="modal fade" id="createGroupModal" tabindex="-1" aria-labelledby="createGroupModalLabel" aria-hidden="true">
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form method="POST" action="{{ url_for('create_group') }}">
       {{ create_group_form.hidden_tag() }}

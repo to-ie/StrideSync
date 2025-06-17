@@ -5,12 +5,13 @@
     <div>
       {{ run.date.strftime('%d %b %Y') }} — {{ run.distance }} km in {{ run.time // 60 }}m {{ run.time % 60 }}s
     </div>
+    
     {% if current_user.id == run.user_id %}
     <button class="btn btn-sm btn-outline-danger ms-3" data-bs-toggle="modal" data-bs-target="#removeModal-{{ run.id }}">
       Remove from group
     </button>
 
-    <!-- Modal -->
+    <!-- Remove Modal -->
     <div class="modal fade" id="removeModal-{{ run.id }}" tabindex="-1" aria-labelledby="removeModalLabel-{{ run.id }}" aria-hidden="true">
       <div class="modal-dialog">
         <form method="POST" action="{{ url_for('remove_run_from_group', group_id=group_id, run_id=run.id) }}">
@@ -21,7 +22,7 @@
             </div>
             <div class="modal-body">
               Are you sure you want to remove this run from the group?<br>
-              <strong>This will not delete the run</strong>, it will only remove the group association.
+              <strong>This will not delete the run</strong>, only its association with this group.
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -47,6 +48,7 @@
   </ul>
 </nav>
 {% endif %}
+
 {% else %}
 <p class="text-muted mt-2">No activity logged.</p>
 {% endif %}

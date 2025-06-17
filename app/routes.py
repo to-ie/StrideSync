@@ -1,36 +1,20 @@
-from flask import (
-    render_template, flash, redirect, url_for,
-    request, session, abort, jsonify
-)
-from flask_login import (
-    login_user, logout_user, current_user, login_required
-)
-
+from flask import render_template, flash, redirect, url_for, request, session, abort, jsonify
+from flask_login import login_user, logout_user, current_user, login_required
 import sqlalchemy as sa
-
-from sqlalchemy import select, func, and_
-from urllib.parse import urlsplit
-from datetime import datetime, timedelta
-from calendar import month_abbr
-
-from app import app, db
+from app import db, login_manager, app
 from app.forms import (
     LoginForm, RegisterForm, LogActivityForm,
     EditRunForm, DeleteRunForm, CreateGroupForm
 )
 from app.models import (
-    User, UserRole, Run, Challenge, Group,
+    User, UserRole, Run, Group,
     GroupInvite, user_groups, run_groups
 )
-
-from app.utils.token import generate_group_invite_token, verify_group_invite_token
-
 from app.email import (
     send_verification_email, send_group_invite_email
 )
-from app.utils.token import generate_group_invite_token
-
-
+from app.utils.token import generate_group_invite_token, verify_group_invite_token
+from datetime import datetime, timedelta
 
 
 @app.route('/')
@@ -173,421 +157,60 @@ def verify_email(token):
     return redirect(url_for('login'))
 
 
-@app.template_filter('datetimeformat')
-def datetimeformat(value, format='%d-%m-%y'):
-    if isinstance(value, str):
-        value = datetime.strptime(value, "%Y-%m-%d")
-    return value.strftime(format)
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    runs = db.session.scalars(
-        sa.select(Run).where(Run.user_id == current_user.id)
-    ).all()
-
-    distance_by_date = {}
-    for run in runs:
-        run_date = run.date.date()
-        distance_by_date[run_date] = distance_by_date.get(run_date, 0) + run.distance
-
-    today = datetime.utcnow().date()
-    start_date = today - timedelta(days=364)
-    while start_date.weekday() != 0:
-        start_date -= timedelta(days=1)
-
-    heatmap_cells = []
-    month_labels = []
-    current_month = None
-
-    for week in range(53):
-        column = []
-        week_start = start_date + timedelta(weeks=week)
-
-        if week_start.month != current_month:
-            month_labels.append(month_abbr[week_start.month])
-            current_month = week_start.month
-        else:
-            month_labels.append("")
-
-        for day in range(7):
-            date = week_start + timedelta(days=day)
-            if date > today:
-                column.append(None)
-            else:
-                column.append({
-                    "date": date,
-                    "active": date in distance_by_date,
-                    "distance": distance_by_date.get(date, 0)
-                })
-        heatmap_cells.append(column)
-
-    recent_runs = db.session.scalars(
-        sa.select(Run)
-        .where(Run.user_id == current_user.id)
-        .order_by(Run.date.desc())
-        .limit(5)
-    ).all()
-
-    live_challenges = db.session.scalars(
-        sa.select(Challenge).where(Challenge.is_active == True)
-    ).all()
-
-    form = LogActivityForm()
-    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
-    form.challenges.choices = [(c.id, c.name) for c in live_challenges]
-
-    edit_form = EditRunForm()
-    edit_form.groups.choices = [(g.id, g.name) for g in current_user.groups]
-    edit_form.challenges.choices = [(c.id, c.name) for c in live_challenges]
-
-    delete_form = DeleteRunForm()
-    create_group_form = CreateGroupForm()
-
-
-    return render_template(
-        "dashboard.html",
-        user=current_user,
-        runs=runs,
-        recent_runs=recent_runs,
-        heatmap_cells=heatmap_cells,
-        month_labels=month_labels,
-        live_challenges=live_challenges,
-        form=form,
-        edit_form=edit_form,
-        delete_form=delete_form, 
-        create_group_form=create_group_form
-    )
-
-@app.route('/log_activity', methods=['POST'])
-@login_required
-def log_activity():
-    form = LogActivityForm()
-    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
-    live_challenges = db.session.scalars(
-        sa.select(Challenge).where(Challenge.is_active == True)
-    ).all()
-    form.challenges.choices = [(c.id, c.name) for c in live_challenges]
-
-    if form.validate_on_submit():
-        distance = float(form.distance.data)
-        total_seconds = (form.hours.data or 0) * 3600 + (form.minutes.data or 0) * 60
-
-        if total_seconds == 0 or distance <= 0:
-            flash("Time and distance must be greater than zero.", "danger")
-            session["open_activity_modal"] = True
-            return redirect(url_for('dashboard'))
-
-        pace = total_seconds / distance
-
-        run = Run(
-            user_id=current_user.id,
-            date=form.date.data,
-            distance=distance,
-            time=total_seconds,
-            pace=pace
-        )
-
-        selected_group_ids = [int(gid) for gid in request.form.getlist('groups')]
-        if selected_group_ids:
-            run.groups = db.session.scalars(
-                sa.select(Group).where(Group.id.in_(selected_group_ids))
-            ).all()
-
-        db.session.add(run)
-        db.session.flush()  # ensures run.id is populated
-
-        # Associate selected challenges
-        selected_challenge_ids = [int(cid) for cid in request.form.getlist('challenges')]
-        if selected_challenge_ids:
-            run.challenges = db.session.scalars(
-                sa.select(Challenge).where(Challenge.id.in_(selected_challenge_ids))
-            ).all()
-
-        db.session.commit()
-        flash("Activity logged successfully!", "success")
-        session.pop("open_activity_modal", None)
-        return redirect(url_for('dashboard'))
-
-    flash("There was an error logging your activity.", "danger")
-    session["open_activity_modal"] = True
-    return redirect(url_for('dashboard'))
-
-
-@app.route('/edit_run/<int:run_id>', methods=['POST'])
-@login_required
-def edit_run(run_id):
-    run = db.session.get(Run, run_id)
-    if run and run.user_id == current_user.id:
-        date = request.form.get('date')
-        distance = float(request.form.get('distance'))
-        time = int(request.form.get('time')) * 60  # seconds
-        pace = round(time / distance, 2) if distance > 0 else 0
-
-        run.date = datetime.strptime(date, "%Y-%m-%d")
-        run.distance = distance
-        run.time = time
-        run.pace = pace
-
-        # Update group associations
-        selected_group_ids = request.form.getlist('groups')
-        run.groups = db.session.scalars(
-            sa.select(Group).where(Group.id.in_(selected_group_ids))
-        ).all()
-
-        # Update challenge associations
-        selected_challenge_ids = request.form.getlist('challenges')
-        run.challenges = db.session.scalars(
-            sa.select(Challenge).where(Challenge.id.in_(selected_challenge_ids))
-        ).all()
-
-        db.session.commit()
-        flash('Run updated.', 'success')
-    return redirect(url_for('dashboard'))
-
-
 @app.route('/delete_run/<int:run_id>', methods=['POST'])
 @login_required
 def delete_run(run_id):
     run = db.session.get(Run, run_id)
     if run and run.user_id == current_user.id:
+        # Remove the associations with groups and user
+        for group in run.groups:
+            group.runs.remove(run)  # Remove the run from associated groups
         db.session.delete(run)
         db.session.commit()
-        flash('Activity deleted.', 'info')
+        flash('Activity deleted. All associated group associations were removed.', 'info')
     return redirect(url_for('dashboard'))
 
-@app.route('/groups/create', methods=['POST'])
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
-def create_group():
-    create_group_form = CreateGroupForm()
-    if create_group_form.validate_on_submit():
-        group = Group(
-            name=create_group_form.name.data.strip(),
-            description=create_group_form.description.data.strip()
-        )
-        group.members.append(current_user)
-        group.admins.append(current_user)
-        db.session.add(group)
+def delete_user(user_id):
+    user = db.session.get(User, user_id)
+    if user and user.id == current_user.id:
+        # Remove the user's associations from any groups
+        for group in user.groups:
+            group.members.remove(user)
+        for group in user.admin_of_groups:
+            group.admins.remove(user)
+        
+        # Delete any runs associated with the user
+        for run in user.runs:
+            db.session.delete(run)
+        
+        db.session.delete(user)
         db.session.commit()
-        return redirect(url_for('view_group', group_id=group.id))
+        flash('Your account and all related data (runs and groups) have been deleted.', 'info')
+        return redirect(url_for('index'))
 
-    flash("Failed to create group. Please check the form.", "danger")
-    session['open_group_modal'] = True
-
-    return render_template(
-        "dashboard.html",
-        user=current_user,
-        runs=runs,
-        recent_runs=recent_runs,
-        heatmap_cells=heatmap_cells,
-        month_labels=month_labels,
-        live_challenges=live_challenges,
-        form=LogActivityForm(),
-        edit_form=EditRunForm(),
-        delete_form=DeleteRunForm(),
-        create_group_form=create_group_form
-    )
-
-from app.models import run_groups  # Ensure this import is present
-
-@app.route('/groups/<int:group_id>')
-@login_required
-def view_group(group_id):
-    group = db.session.get(Group, group_id)
-    if not group:
-        abort(404)
-
-    # ✅ Top 5 by total distance (group-linked runs only)
-    top_distance = db.session.execute(
-        sa.select(User.username, sa.func.sum(Run.distance).label('total_distance'))
-        .select_from(User)
-        .join(Run, Run.user_id == User.id)
-        .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(run_groups.c.group_id == group_id)
-        .group_by(User.username)
-        .order_by(sa.desc('total_distance'))
-        .limit(5)
-    ).all()
+    flash('You cannot delete another user.', 'danger')
+    return redirect(url_for('dashboard'))
 
 
-    # ✅ Top 5 by number of runs (group-linked runs only)
-    top_runs = db.session.execute(
-        sa.select(User.username, sa.func.count(Run.id).label('run_count'))
-        .join(Run, Run.user_id == User.id)
-        .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(run_groups.c.group_id == group_id)
-        .group_by(User.username)
-        .order_by(sa.desc('run_count'))
-        .limit(5)
-    ).all()
-
-    # ✅ Top 5 by best average pace (from last 5 group-linked runs per user)
-    pace_data = []
-    for user in group.members:
-        recent_runs = db.session.scalars(
-            sa.select(Run)
-            .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == user.id,
-                run_groups.c.group_id == group_id
-            )
-            .order_by(Run.date.desc())
-            .limit(5)
-        ).all()
-        if recent_runs:
-            avg_pace = sum(run.pace for run in recent_runs) / len(recent_runs)
-            pace_data.append((user.username, avg_pace))
-    top_pace = sorted(pace_data, key=lambda x: x[1])[:5]  # lower pace = faster
-
-    # ✅ Paginated user runs in the group
-    PER_PAGE = 5
-    user_runs_paginated = {}
-
-    for member in group.members:
-        page = request.args.get(f'page_{member.id}', 1, type=int)
-
-        runs = db.session.scalars(
-            sa.select(Run)
-            .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
-            .order_by(Run.date.desc())
-            .limit(PER_PAGE)
-            .offset((page - 1) * PER_PAGE)
-        ).all()
-
-        run_count = db.session.scalar(
-            sa.select(sa.func.count(Run.id))
-            .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
-        )
-
-        user_runs_paginated[member.id] = {
-            "runs": runs,
-            "total": run_count,
-            "pages": (run_count + PER_PAGE - 1) // PER_PAGE,
-            "current": page,
-        }
-
-    print("Top distance data:", top_distance)
-
-    return render_template(
-        "group.html",
-        group=group,
-        is_admin=current_user in group.admins,
-        top_distance=top_distance,
-        top_runs=top_runs,
-        top_pace=top_pace,
-        user_runs_paginated=user_runs_paginated
-    )
-
-
-
-@app.route('/groups/<int:group_id>/invite', methods=['POST'])
-@login_required
-def invite_to_group(group_id):
-    group = db.session.get(Group, group_id)
-    if not group or current_user not in group.admins:
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
-
-    data = request.get_json()
-    email = data.get('email', '').strip().lower()
-    if not email:
-        return jsonify({"success": False, "message": "Email is required"}), 400
-
-    # Check if user already exists
-    existing_user = db.session.scalar(sa.select(User).where(User.email == email))
-    if existing_user:
-        if existing_user in group.members:
-            return jsonify({"success": False, "message": "User is already in the group"}), 409
-        group.members.append(existing_user)
-        db.session.commit()
-        return jsonify({"success": True, "message": f"{existing_user.username} added to the group."})
-
-    # Check if invite already exists
-    existing_invite = db.session.scalar(
-        sa.select(GroupInvite).where(
-            sa.and_(
-                GroupInvite.email == email,
-                GroupInvite.group_id == group.id
-            )
-        )
-    )
-    if existing_invite:
-        return jsonify({"success": False, "message": "Invite already sent."}), 409
-
-    # Create invite and send email
-    try:
-        token = generate_group_invite_token(email=email, group_id=group.id)
-        invite = GroupInvite(email=email, group_id=group.id, token=token)
-        db.session.add(invite)
-        db.session.commit()
-
-        send_group_invite_email(email, group)
-    except Exception as e:
-        print("🚨 Email error:", e)
-        return jsonify({"success": False, "message": "Failed to send email."}), 500
-
-    return jsonify({"success": True, "message": f"Invitation sent to {email}."})
-
-@app.route('/groups/<int:group_id>/delete', methods=['POST'])
+@app.route('/delete_group/<int:group_id>', methods=['POST'])
 @login_required
 def delete_group(group_id):
     group = db.session.get(Group, group_id)
     if not group or current_user not in group.admins:
         abort(403)
 
+    # Keep the runs but remove the group association
+    for run in group.runs:
+        run.groups.remove(group)  # Remove the group association from runs
+
     db.session.delete(group)
     db.session.commit()
-    flash(f"The group '{group.name}' has been deleted.", "info")
+    flash(f"The group '{group.name}' has been deleted. The runs are kept but no longer associated.", "info")
     return redirect(url_for('dashboard'))
 
-@app.route('/groups/<int:group_id>/member/<int:user_id>/runs')
-@login_required
-def get_member_runs(group_id, user_id):
-    PER_PAGE = 10
-    page = request.args.get('page', 1, type=int)
-
-    group = db.session.get(Group, group_id)
-    if not group or current_user not in group.members:
-        abort(403)
-
-    runs = db.session.scalars(
-        sa.select(Run)
-        .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(
-            Run.user_id == user_id,
-            run_groups.c.group_id == group_id
-        )
-        .order_by(Run.date.desc())
-        .limit(PER_PAGE)
-        .offset((page - 1) * PER_PAGE)
-    ).all()
-
-    run_count = db.session.scalar(
-        sa.select(sa.func.count(Run.id))
-        .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(
-            Run.user_id == user_id,
-            run_groups.c.group_id == group_id
-        )
-    )
-
-    pages = (run_count + PER_PAGE - 1) // PER_PAGE
-
-    return render_template(
-        "partials/_member_runs.html",
-        runs=runs,
-        page=page,
-        pages=pages,
-        user_id=user_id,
-        group_id=group_id
-    )
 
 @app.route('/groups/<int:group_id>/remove_run/<int:run_id>', methods=['POST'])
 @login_required
@@ -601,12 +224,13 @@ def remove_run_from_group(group_id, run_id):
     if run.user_id != current_user.id:
         abort(403)
 
-    # Remove the group association
+    # Remove the group association from the run
     run.groups = [g for g in run.groups if g.id != group_id]
     db.session.commit()
 
     flash('Run removed from group. It was not deleted.', 'info')
     return redirect(url_for('view_group', group_id=group_id))
+
 
 @app.route('/groups/<int:group_id>/leave', methods=['POST'])
 @login_required
