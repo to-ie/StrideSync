@@ -287,15 +287,15 @@ def log_activity():
             time=total_seconds,
             pace=pace
         )
-        db.session.add(run)
-        db.session.flush()  # ensures run.id is populated
 
-        # Associate selected groups
         selected_group_ids = [int(gid) for gid in request.form.getlist('groups')]
         if selected_group_ids:
             run.groups = db.session.scalars(
                 sa.select(Group).where(Group.id.in_(selected_group_ids))
             ).all()
+
+        db.session.add(run)
+        db.session.flush()  # ensures run.id is populated
 
         # Associate selected challenges
         selected_challenge_ids = [int(cid) for cid in request.form.getlist('challenges')]
@@ -397,12 +397,12 @@ def view_group(group_id):
     if not group:
         abort(404)
 
-    # Top 5 by total distance (group-linked runs only)
+    # ✅ Top 5 by total distance (group-linked runs only)
     top_distance = db.session.execute(
         sa.select(User.username, sa.func.sum(Run.distance).label('total_distance'))
-        .select_from(run_groups)
-        .join(Run, Run.id == run_groups.c.run_id)
-        .join(User, User.id == Run.user_id)
+        .select_from(User)
+        .join(Run, Run.user_id == User.id)
+        .join(run_groups, run_groups.c.run_id == Run.id)
         .where(run_groups.c.group_id == group_id)
         .group_by(User.username)
         .order_by(sa.desc('total_distance'))
@@ -410,18 +410,18 @@ def view_group(group_id):
     ).all()
 
 
-    # Top 5 by number of runs (group-linked runs only)
+    # ✅ Top 5 by number of runs (group-linked runs only)
     top_runs = db.session.execute(
         sa.select(User.username, sa.func.count(Run.id).label('run_count'))
         .join(Run, Run.user_id == User.id)
         .join(run_groups, run_groups.c.run_id == Run.id)
         .where(run_groups.c.group_id == group_id)
-        .group_by(User.id)
+        .group_by(User.username)
         .order_by(sa.desc('run_count'))
         .limit(5)
     ).all()
 
-    # Top 5 by best average pace (from last 5 group-linked runs per user)
+    # ✅ Top 5 by best average pace (from last 5 group-linked runs per user)
     pace_data = []
     for user in group.members:
         recent_runs = db.session.scalars(
@@ -439,6 +439,7 @@ def view_group(group_id):
             pace_data.append((user.username, avg_pace))
     top_pace = sorted(pace_data, key=lambda x: x[1])[:5]  # lower pace = faster
 
+    # ✅ Paginated user runs in the group
     PER_PAGE = 5
     user_runs_paginated = {}
 
@@ -473,34 +474,7 @@ def view_group(group_id):
             "current": page,
         }
 
-
-    for member in group.members:
-        runs = db.session.scalars(
-            sa.select(Run)
-            .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
-            .order_by(Run.date.desc())
-            .limit(PER_PAGE)
-            .offset((page - 1) * PER_PAGE)
-        ).all()
-
-        run_count = db.session.scalar(
-            sa.select(sa.func.count(Run.id))
-            .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
-        )
-
-        user_runs_paginated[member.id] = {
-            "runs": runs,
-            "total": run_count,
-            "pages": (run_count + PER_PAGE - 1) // PER_PAGE
-        }
+    print("Top distance data:", top_distance)
 
     return render_template(
         "group.html",
