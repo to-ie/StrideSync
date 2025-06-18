@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="container py-5">
   <h1 class="display-4 fw-bold hero-title"><span>{{ group.name }}</span> group</span></h1>
   <p class="lead text-muted mb-5">{{ group.description }}</p>
@@ -17,9 +18,10 @@
                 {% for name, dist in top_distance %}
                   <li class="list-group-item d-flex justify-content-between">
                     <span>{{ name }}</span>
-                    <span>{{ "%.1f"|format(dist / 1000) }} km</span>
+                    <span>{{ dist }} km</span>
                   </li>
                 {% endfor %}
+                
               </ul>
             {% else %}
               <p class="text-muted">No activity logged yet.</p>
@@ -262,4 +264,6 @@ document.getElementById('inviteForm').addEventListener('submit', async function(
     </form>
   </div>
 </div>
+
+
 {% endblock %}

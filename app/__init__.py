@@ -19,6 +19,9 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate.init_app(app, db)
 login.init_app(app)
+login.login_view = "login"  # name of your login route function
+login.login_message = "Please log in to access this page."
+login.login_message_category = "warning"
 mail.init_app(app)
 
 # Import routes and models AFTER initializing extensions

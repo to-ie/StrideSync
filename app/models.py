@@ -41,7 +41,6 @@ group_admins = sa.Table(
     sa.Column("group_id", sa.ForeignKey("groups.id"), primary_key=True),
 )
 
-
 # ---------------------------
 # Models
 # ---------------------------
@@ -56,6 +55,9 @@ class User(UserMixin, db.Model):
     role = sa.Column(sa.Enum(UserRole), default=UserRole.USER, nullable=False)
     is_verified = sa.Column(sa.Boolean, default=False)
     verification_token = sa.Column(sa.String(128), nullable=False, default=lambda: secrets.token_urlsafe(32))
+
+    reset_token = db.Column(db.String, nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
 
     runs = so.relationship("Run", back_populates="user", cascade="all, delete-orphan")
     groups = so.relationship("Group", secondary=user_groups, back_populates="members")
@@ -105,11 +107,6 @@ class Group(db.Model):
         return f"<Group {self.name}>"
 
 
-@login.user_loader 
-def load_user(id): 
-    return db.session.get(User, int(id))
-
-
 class GroupInvite(db.Model):
     __tablename__ = "group_invite"
 
@@ -123,3 +120,12 @@ class GroupInvite(db.Model):
 
     def __repr__(self):
         return f"<GroupInvite {self.email} -> Group {self.group_id}>"
+
+
+# ---------------------------
+# Flask-Login Loader
+# ---------------------------
+
+@login.user_loader 
+def load_user(id): 
+    return db.session.get(User, int(id))

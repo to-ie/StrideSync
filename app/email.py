@@ -35,6 +35,37 @@ If you didn't sign up, you can ignore this email."""
 
     mail.send(msg)
 
+def send_password_reset_email(user):
+    reset_url = url_for('reset_password', token=user.reset_token, _external=True)
+    subject = "StrideSync Password Reset"
+    recipient = user.email
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    username = user.username or 'there'
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient])
+
+    # Plain text fallback
+    msg.body = f"""Hi {username},
+
+You requested to reset your StrideSync password.
+
+Click the link below to choose a new password:
+
+{reset_url}
+
+If you didn’t request this, you can ignore this email."""
+
+    # HTML version (styled)
+    msg.html = _build_email_html(
+        title="Reset Your StrideSync Password",
+        greeting=f"Hi {username},",
+        body="We received a request to reset your password. Click the button below to choose a new one.",
+        action_url=reset_url,
+        action_label="Reset Password"
+    )
+
+    mail.send(msg)
+
 
 def send_group_invite_email(email, group):
     token = generate_group_invite_token(email, group.id)

@@ -9,6 +9,8 @@ from wtforms.validators import (
 )
 
 
+
+
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[
         DataRequired(message='Email address is required.'),
@@ -95,3 +97,16 @@ class AccountForm(FlaskForm):
     ])
 
     submit = SubmitField("Update Account")
+
+class RequestResetForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Send Reset Link')
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8),
+        EqualTo('confirm', message='Passwords must match')
+    ])
+    confirm = PasswordField('Confirm Password')
+    submit = SubmitField('Reset Password')

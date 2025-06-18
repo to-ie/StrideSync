@@ -16,7 +16,7 @@ from calendar import month_abbr
 from app import app, db
 from app.forms import (
     LoginForm, RegisterForm, LogActivityForm,
-    EditRunForm, DeleteRunForm, CreateGroupForm
+    EditRunForm, DeleteRunForm, CreateGroupForm, RequestResetForm, ResetPasswordForm
 )
 from app.models import (
     User, UserRole, Run, Group,
@@ -26,7 +26,8 @@ from app.models import (
 from app.utils.token import generate_group_invite_token, verify_group_invite_token
 
 from app.email import (
-    send_verification_email, send_group_invite_email
+    send_verification_email, send_group_invite_email, send_password_reset_email,
+    send_verification_email
 )
 from app.utils.token import generate_group_invite_token
 
@@ -156,6 +157,48 @@ def register():
 
     return render_template('register.html', form=form)
 
+@app.route('/reset-password', methods=['GET', 'POST'])
+def request_password_reset():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = db.session.scalar(sa.select(User).where(User.email == form.email.data.strip().lower()))
+        if user:
+            user.reset_token = secrets.token_urlsafe(32)
+            user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+            db.session.commit()
+            send_password_reset_email(user)  # You must define this
+            flash("If the email is registered, you'll receive a reset email.", "info")
+        else:
+            flash("If the email is registered, you'll receive a reset email.", "info")
+
+        return redirect(url_for('login'))
+
+    return render_template('auth/request_reset.html', form=form)
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    user = db.session.scalar(sa.select(User).where(User.reset_token == token))
+
+    if not user or user.reset_token_expiry < datetime.utcnow():
+        flash("Invalid or expired reset link.", "danger")
+        return redirect(url_for('login'))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        flash("Password reset successfully. You can now log in.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('auth/reset_password.html', form=form)
 
 @app.route('/verify/<token>')
 def verify_email(token):
@@ -173,7 +216,6 @@ def verify_email(token):
         flash("Your account has been verified!", "success")
 
     return redirect(url_for('login'))
-
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%d-%m-%y'):
@@ -336,6 +378,10 @@ def edit_run(run_id):
 def delete_run(run_id):
     run = db.session.get(Run, run_id)
     if run and run.user_id == current_user.id:
+        if run:
+            run.groups.clear()  
+            db.session.delete(run)
+
         db.session.delete(run)
         db.session.commit()
         flash('Activity deleted.', 'info')
@@ -378,8 +424,6 @@ def create_group():
     session['open_group_modal'] = True
     return redirect(url_for('dashboard'))
 
-
-
 @app.route('/groups/<int:group_id>')
 @login_required
 def view_group(group_id):
@@ -396,16 +440,21 @@ def view_group(group_id):
         
     # ✅ Top 5 by total distance (group-linked runs only)
     top_distance = db.session.execute(
-        sa.select(User.username, sa.func.sum(Run.distance).label('total_distance'))
-        .select_from(User)
-        .join(Run, Run.user_id == User.id)
+        sa.select(
+            User.username,
+            sa.func.sum(Run.distance).label('total_distance')
+        )
+        .select_from(Run)
+        .join(User, Run.user_id == User.id)
         .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(run_groups.c.group_id == group_id)
+        .where(run_groups.c.group_id == group.id)
         .group_by(User.username)
         .order_by(sa.desc('total_distance'))
         .limit(5)
     ).all()
 
+    for row in top_distance:
+        print(row)
 
     # ✅ Top 5 by number of runs (group-linked runs only)
     top_runs = db.session.execute(
@@ -472,6 +521,7 @@ def view_group(group_id):
         }
 
     print("Top distance data:", top_distance)
+    
 
     return render_template(
         "group.html",
@@ -525,7 +575,6 @@ def invite_to_group(group_id):
 
         send_group_invite_email(email, group)
     except Exception as e:
-        print("🚨 Email error:", e)
         return jsonify({"success": False, "message": "Failed to send email."}), 500
 
     return jsonify({"success": True, "message": f"Invitation sent to {email}."})
@@ -536,6 +585,13 @@ def delete_group(group_id):
     group = db.session.get(Group, group_id)
     if not group or current_user not in group.admins:
         abort(403)
+
+    # Unlink all runs from the group, but do NOT delete the runs
+    for run in group.runs:
+        run.groups = [g for g in run.groups if g.id != group.id]
+
+    # Delete any pending invites
+    db.session.execute(sa.delete(GroupInvite).where(GroupInvite.group_id == group.id))
 
     db.session.delete(group)
     db.session.commit()
@@ -694,7 +750,13 @@ def remove_member_from_group(group_id, user_id):
         flash("You can't remove yourself. Leave the group instead.", "warning")
         return redirect(url_for('view_group', group_id=group_id))
 
+    # ✅ Remove member from group
     group.members.remove(member)
+
+    # ✅ Also remove this member's runs from the group
+    for run in member.runs:
+        run.groups = [g for g in run.groups if g.id != group.id]
+
     db.session.commit()
     flash(f"{member.username} has been removed from the group.", "info")
     return redirect(url_for('view_group', group_id=group_id))
@@ -774,10 +836,6 @@ def my_account():
 
     return render_template("my_account.html", form=form, user=user)
 
-
-
-
-
 @app.route('/admin')
 @login_required
 def admin_panel():
@@ -833,6 +891,19 @@ def admin_delete_user(user_id):
 
     user = db.session.get(User, user_id)
     if user:
+        # Remove from all groups
+        for group in list(user.groups):
+            group.members.remove(user)
+
+        # Delete groups this user created (if you're tracking that)
+        for group in db.session.scalars(sa.select(Group).where(Group.admins.any(id=user.id))):
+            db.session.delete(group)
+
+        # Delete runs and group associations
+        for run in list(user.runs):
+            run.groups.clear()
+            db.session.delete(run)
+
         db.session.delete(user)
         db.session.commit()
         flash(f"{user.username} has been deleted.", "danger")
@@ -868,6 +939,12 @@ def admin_delete_group(group_id):
 
     group = db.session.get(Group, group_id)
     if group:
+        # Unlink all runs from the group, but do NOT delete the runs
+        for run in group.runs:
+            run.groups = [g for g in run.groups if g.id != group.id]
+
+        # Delete any pending invites
+        db.session.execute(sa.delete(GroupInvite).where(GroupInvite.group_id == group.id))
         db.session.delete(group)
         db.session.commit()
         flash(f"Group '{group.name}' deleted.", "danger")
@@ -907,6 +984,11 @@ def admin_remove_user_from_group(group_id, user_id):
 
     if user in group.members:
         group.members.remove(user)
+
+        # 🚨 Remove all runs by this user from the group
+        for run in user.runs:
+            run.groups = [g for g in run.groups if g.id != group_id]
+
         db.session.commit()
         flash(f"{user.username} has been removed from {group.name}.", "info")
 
@@ -970,5 +1052,16 @@ def admin_add_user_to_group(group_id):
 
     return redirect(url_for('admin_panel'))
 
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template("404.html"), 404
 
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template("403.html"), 403
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template("500.html"), 500
 
