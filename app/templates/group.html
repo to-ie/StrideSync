@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-5">
-  <h1 class="display-4 fw-bold mb-4 hero-title">
-    <span>{{ group.name }}</span> group
-  </h1>
-  <p class="lead mt-3 text-muted" style="margin-top: -20px !important; margin-bottom: 40px;">
-    {{ group.description }}
-  </p>
+  <h1 class="display-4 fw-bold hero-title"><span>{{ group.name }}</span> group</span></h1>
+  <p class="lead text-muted mb-5">{{ group.description }}</p>
 
   <div class="row">
     <!-- Group Info -->
@@ -100,111 +96,170 @@
         <ul class="list-group list-group-flush">
           {% for member in group.members %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-              {{ member.username }}
-              {% if member in group.admins %}
-                <span class="badge bg-warning text-dark ms-2">Group admin</span>
+              <div>
+                {{ member.username }}
+                {% if member in group.admins %}
+                  <span class="badge bg-warning text-dark ms-2">Group admin</span>
+                {% endif %}
+              </div>
+              {% if current_user in group.admins and member != current_user %}
+                <!-- Remove Member Button -->
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#removeMemberModal{{ member.id }}" title="Remove member">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+
+                <!-- Remove Member Modal -->
+                <div class="modal fade" id="removeMemberModal{{ member.id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <form method="POST" action="{{ url_for('remove_member_from_group', group_id=group.id, user_id=member.id) }}">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Remove Member</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          Are you sure you want to remove <strong>{{ member.username }}</strong> from <strong>{{ group.name }}</strong>?
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-danger">Remove</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
               {% endif %}
             </li>
           {% endfor %}
         </ul>
       </div>
 
-      <!-- Invite Modal -->
+      <!-- Admin Actions -->
       {% if current_user in group.admins %}
-        <div class="mt-3 text-end">
+        <div class="mt-3 text-end d-flex justify-content-end gap-2">
+          <button class="btn btn-soft btn-sm" data-bs-toggle="modal" data-bs-target="#editGroupModal">
+            <i class="bi bi-pencil"></i> Edit Group
+          </button>
           <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteGroupModal">
             Delete Group
           </button>
-        </div>
-
-        <div class="modal fade" id="inviteModal" tabindex="-1">
-          <div class="modal-dialog">
-            <form id="inviteForm">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Invite to Group</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <input type="email" id="inviteEmail" class="form-control" placeholder="Enter email" required>
-                  <div id="inviteStatus" class="mt-2 small text-muted"></div>
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-dark">Send Invite</button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <script>
-        document.getElementById('inviteForm').addEventListener('submit', async function(e) {
-          e.preventDefault();
-          const email = document.getElementById('inviteEmail').value;
-          const status = document.getElementById('inviteStatus');
-          status.innerText = "Sending invitation...";
-
-          const res = await fetch("{{ url_for('invite_to_group', group_id=group.id) }}", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
-          });
-
-          const data = await res.json();
-          status.innerText = data.message;
-        });
-        </script>
-
-        <!-- Delete Group Modal -->
-        <div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-labelledby="deleteGroupModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Delete Group</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <p>Are you sure you want to delete <strong>{{ group.name }}</strong>? This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-danger">Delete Group</button>
-                </div>
-              </div>
-            </form>
-          </div>
         </div>
       {% else %}
         <div class="mt-3 text-end">
           <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#leaveGroupModal">
             Leave Group
           </button>
-
-          <!-- Leave Group Modal -->
-          <div class="modal fade" id="leaveGroupModal" tabindex="-1" aria-labelledby="leaveGroupModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <form method="POST" action="{{ url_for('leave_group', group_id=group.id) }}">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="leaveGroupModalLabel">Leave Group</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    Are you sure you want to leave the group <strong>{{ group.name }}</strong>?<br>
-                    You will no longer see updates or activity for this group.
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Leave Group</button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
       {% endif %}
     </div>
+  </div>
+</div>
+
+<!-- Edit Group Modal -->
+<div class="modal fade" id="editGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('edit_group', group_id=group.id) }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Group Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">Group Name</label>
+            <input type="text" class="form-control" name="name" value="{{ group.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" name="description" rows="4">{{ group.description }}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-dark">Save Changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="modal fade" id="inviteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="inviteForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Invite to Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="email" id="inviteEmail" class="form-control" placeholder="Enter email" required>
+          <div id="inviteStatus" class="mt-2 small text-muted"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-dark">Send Invite</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('inviteForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('inviteEmail').value;
+  const status = document.getElementById('inviteStatus');
+  status.innerText = "Sending invitation...";
+
+  const res = await fetch("{{ url_for('invite_to_group', group_id=group.id) }}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+
+  const data = await res.json();
+  status.innerText = data.message;
+});
+</script>
+
+<!-- Delete Group Modal -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete <strong>{{ group.name }}</strong>? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Group</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Leave Group Modal -->
+<div class="modal fade" id="leaveGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('leave_group', group_id=group.id) }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Leave Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to leave the group <strong>{{ group.name }}</strong>?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Leave Group</button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

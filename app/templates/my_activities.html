@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <h1 class="display-4 fw-bold mb-4 hero-title">My <span>Activities</span></h1>
+    <p class="lead text-muted ">View and manage your activity here.</p>
+
+    <!-- Add Activity Button -->
+    <div class="mb-4 justify-content-end d-flex">
+      <a href="#" class="btn btn-soft btn-sm" data-bs-toggle="modal" data-bs-target="#logActivityModal">
+          <i class="bi bi-plus-lg"></i> Log an activity
+        </a>
+    </div>
+
+    <!-- Run List -->
+    {% if runs %}
+    <div class="list-group shadow-sm">
+      {% for run in runs %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
+            <small class="text-muted">
+              {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
+              {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} /km
+            </small>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editRunModal{{ run.id }}">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRunModal{{ run.id }}">Delete</button>
+          </div>
+        </div>
+
+        <!-- Edit Run Modal -->
+        <div class="modal fade" id="editRunModal{{ run.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="{{ url_for('edit_run', run_id=run.id) }}">
+              {{ edit_form.hidden_tag() }}
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Run</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label>Date</label>
+                    <input type="date" name="date" value="{{ run.date.strftime('%Y-%m-%d') }}" class="form-control">
+                  </div>
+                  <div class="mb-3">
+                    <label>Distance (km)</label>
+                    <input type="number" step="0.1" name="distance" value="{{ run.distance }}" class="form-control">
+                  </div>
+                  <div class="mb-3">
+                    <label>Duration (minutes)</label>
+                    <input type="number" name="time" value="{{ run.time // 60 }}" class="form-control">
+                  </div>
+                  <div class="mb-3">
+                    <label>Groups</label>
+                    {% set selected_group_ids = run.groups | map(attribute='id') | list %}
+                    <select name="groups" class="form-select" multiple>
+                      {% for group in current_user.groups %}
+                        <option value="{{ group.id }}" {% if group.id in selected_group_ids %}selected{% endif %}>
+                          {{ group.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-dark">Save changes</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Delete Run Modal -->
+        <div class="modal fade" id="deleteRunModal{{ run.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="{{ url_for('delete_run', run_id=run.id) }}">
+              {{ delete_form.hidden_tag() }}
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Delete Activity</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p>Are you sure you want to delete your run on <strong>{{ run.date.strftime('%A, %d %B %Y') }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-muted">No runs logged yet. Start by adding a new one.</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Log Activity Modal -->
+<div class="modal fade" id="logActivityModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('log_activity') }}">
+      {{ form.hidden_tag() }}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Log New Activity</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ form.date.label }}
+            {{ form.date(class="form-control") }}
+          </div>
+          <div class="mb-3">
+            {{ form.distance.label }}
+            {{ form.distance(class="form-control") }}
+          </div>
+          <div class="mb-3">
+            <label>Duration</label>
+            <div class="input-group">
+              {{ form.hours(class="form-control", placeholder="Hours") }}
+              <span class="input-group-text">h</span>
+              {{ form.minutes(class="form-control", placeholder="Minutes") }}
+              <span class="input-group-text">m</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            {{ form.groups.label }}
+            {{ form.groups(class="form-select", multiple=true) }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-dark">Save Activity</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if session.open_activity_modal %}
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    new bootstrap.Modal(document.getElementById('logActivityModal')).show();
+  });
+</script>
+{% set _ = session.pop("open_activity_modal") %}
+{% endif %}
+{% endblock %}

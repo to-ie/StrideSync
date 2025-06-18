@@ -47,12 +47,12 @@
 
                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
                   <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                  <li><a class="dropdown-item" href="#">My activities</a></li>
-                  <li><a class="dropdown-item" href="#">My groups</a></li>
-                  <li><a class="dropdown-item" href="#">My account</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('my_activities') }}">My activities</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('my_groups') }}">My groups</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('my_account') }}">My account</a></li>
                   {% if current_user.role.name == 'ADMIN' %}
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#">Administration</a></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('admin_panel') }}">Administration</a></li>
                   {% endif %}
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>

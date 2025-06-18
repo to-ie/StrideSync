@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h1 class="display-4 fw-bold hero-title">My Account</h1>
+  <p class="lead text-muted mb-5">
+    Manage your account details and update your credentials.
+  </p>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card shadow-sm p-4 bg-white">
+        
+        <form method="POST">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control") }}
+            {% for error in form.username.errors %}
+            <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-4">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", value=form.email.data or user.email) }}
+            {% if not user.is_verified %}
+              <div class="form-text text-warning">This email is not verified.</div>
+            {% endif %}
+            {% for error in form.email.errors %}
+                <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-4">
+
+          <div class="mb-4">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control", placeholder="Leave blank to keep current password") }}
+          </div>
+
+          <div class="mb-4">
+            {{ form.password2.label(class="form-label") }}
+            {{ form.password2(class="form-control", placeholder="Re-enter new password") }}
+          </div>
+
+          <div class="text-end">
+            {{ form.submit(class="btn btn-dark") }}
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-4 d-none d-md-block">
+      <div class="card shadow-sm bg-light border-0 p-3">
+        <h6 class="text-muted mb-2">Security tips</h6>
+        <p class="small mb-1">
+          Use a strong and unique password to protect your account.
+        </p>
+        <p class="small mb-0">
+          Changing your email will require verification and log you out for security reasons.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

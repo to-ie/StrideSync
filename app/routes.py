@@ -30,6 +30,9 @@ from app.email import (
 )
 from app.utils.token import generate_group_invite_token
 
+import secrets
+
+from app.forms import AccountForm
 
 
 
@@ -92,7 +95,6 @@ def register():
     if invite_token:
         data = verify_group_invite_token(invite_token)
         if data:
-            # Store the invite details in session
             session["pending_invite_group_id"] = data["group_id"]
             session["pending_invite_email"] = data["email"]
 
@@ -343,32 +345,39 @@ def delete_run(run_id):
 @login_required
 def create_group():
     create_group_form = CreateGroupForm()
+
     if create_group_form.validate_on_submit():
+        group_name = create_group_form.name.data.strip()
+        group_description = create_group_form.description.data.strip()
+
+        # Case-insensitive check for duplicate group name
+        existing_group = db.session.scalar(
+            sa.select(Group).where(func.lower(Group.name) == group_name.lower())
+        )
+        if existing_group:
+            flash("A group with this name already exists. Please choose a different name.", "warning")
+            session['open_group_modal'] = True
+            return redirect(url_for('dashboard'))
+
+        # Create and save the group
         group = Group(
-            name=create_group_form.name.data.strip(),
-            description=create_group_form.description.data.strip()
+            name=group_name,
+            description=group_description
         )
         group.members.append(current_user)
         group.admins.append(current_user)
+
         db.session.add(group)
         db.session.commit()
+
+        flash(f"Group '{group.name}' created successfully.", "success")
         return redirect(url_for('view_group', group_id=group.id))
 
+    # If form did not validate
     flash("Failed to create group. Please check the form.", "danger")
     session['open_group_modal'] = True
+    return redirect(url_for('dashboard'))
 
-    return render_template(
-        "dashboard.html",
-        user=current_user,
-        runs=runs,
-        recent_runs=recent_runs,
-        heatmap_cells=heatmap_cells,
-        month_labels=month_labels,
-        form=LogActivityForm(),
-        edit_form=EditRunForm(),
-        delete_form=DeleteRunForm(),
-        create_group_form=create_group_form
-    )
 
 
 @app.route('/groups/<int:group_id>')
@@ -473,8 +482,6 @@ def view_group(group_id):
         top_pace=top_pace,
         user_runs_paginated=user_runs_paginated
     )
-
-
 
 @app.route('/groups/<int:group_id>/invite', methods=['POST'])
 @login_required
@@ -615,3 +622,353 @@ def leave_group(group_id):
         flash(f"You have left the group '{group.name}'.", "info")
 
     return redirect(url_for('dashboard'))
+
+
+@app.route('/my-activities')
+@login_required
+def my_activities():
+    runs = db.session.scalars(
+        sa.select(Run).where(Run.user_id == current_user.id).order_by(Run.date.desc())
+    ).all()
+
+    form = LogActivityForm()
+    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
+
+    edit_form = EditRunForm()
+    edit_form.groups.choices = [(g.id, g.name) for g in current_user.groups]
+
+    delete_form = DeleteRunForm()
+
+    return render_template(
+        "my_activities.html",
+        runs=runs,
+        form=form,
+        edit_form=edit_form,
+        delete_form=delete_form,
+        user=current_user
+    )
+
+@app.route('/my-groups')
+@login_required
+def my_groups():
+    create_group_form = CreateGroupForm()
+    return render_template(
+        "my_groups.html",
+        groups=current_user.groups,
+        create_group_form=create_group_form,
+        user=current_user
+    )
+
+@app.route('/groups/<int:group_id>/edit', methods=['POST'])
+@login_required
+def edit_group(group_id):
+    group = db.session.get(Group, group_id)
+
+    if not group or current_user not in group.admins:
+        abort(403)
+
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if name:
+        group.name = name
+    group.description = description
+
+    db.session.commit()
+    flash("Group details updated.", "success")
+    return redirect(url_for('view_group', group_id=group_id))
+
+@app.route('/groups/<int:group_id>/remove_member/<int:user_id>', methods=['POST'])
+@login_required
+def remove_member_from_group(group_id, user_id):
+    group = db.session.get(Group, group_id)
+    member = db.session.get(User, user_id)
+
+    if not group or not member:
+        abort(404)
+
+    if current_user not in group.admins or member not in group.members:
+        abort(403)
+
+    if member == current_user:
+        flash("You can't remove yourself. Leave the group instead.", "warning")
+        return redirect(url_for('view_group', group_id=group_id))
+
+    group.members.remove(member)
+    db.session.commit()
+    flash(f"{member.username} has been removed from the group.", "info")
+    return redirect(url_for('view_group', group_id=group_id))
+
+@app.route('/my-account', methods=['GET', 'POST'])
+@login_required
+def my_account():
+    user = current_user
+
+    if request.method == 'POST':
+        form = AccountForm()
+        if form.validate_on_submit():
+            updated = False
+
+            username = form.username.data.strip()
+            email = form.email.data.strip().lower()
+            password = form.password.data.strip()
+
+            changed_username = username.lower() != user.username.lower()
+            changed_email = email != user.email
+            changed_password = bool(password)
+
+            # ✅ Username uniqueness check (case-insensitive, excluding self)
+            if changed_username:
+                existing = db.session.scalar(
+                    sa.select(User).where(
+                        sa.func.lower(User.username) == username.lower(),
+                        User.id != user.id
+                    )
+                )
+                if existing:
+                    flash("Username is already taken.", "warning")
+                    return redirect(url_for('my_account'))
+                user.username = username
+                updated = True
+
+            # ✅ Email uniqueness check (excluding self)
+            if changed_email:
+                existing = db.session.scalar(
+                    sa.select(User).where(
+                        User.email == email,
+                        User.id != user.id
+                    )
+                )
+                if existing:
+                    flash("Email is already registered.", "warning")
+                    return redirect(url_for('my_account'))
+
+                user.email = email
+                user.is_verified = False
+                user.verification_token = secrets.token_urlsafe(32)
+                db.session.commit()
+                send_verification_email(user)
+                flash("Email updated. Please verify your new address.", "info")
+                logout_user()
+                return redirect(url_for('login'))
+
+            # ✅ Password update
+            if changed_password:
+                user.set_password(password)
+                flash("Password updated successfully.", "success")
+                updated = True
+
+            if updated:
+                db.session.commit()
+                flash("Account updated.", "success")
+            else:
+                flash("No changes made.", "info")
+
+            return redirect(url_for('my_account'))
+        else:
+            flash("Please correct the errors below.", "danger")
+            print("Form errors:", form.errors)
+
+    else:
+        form = AccountForm(obj=user)
+
+    return render_template("my_account.html", form=form, user=user)
+
+
+
+
+
+@app.route('/admin')
+@login_required
+def admin_panel():
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    users = db.session.scalars(sa.select(User)).all()
+    groups = db.session.scalars(sa.select(Group)).all()
+
+    user_stats = {
+        user.id: {
+            "num_runs": len(user.runs),
+            "num_groups": len(user.groups)
+        }
+        for user in users
+    }
+
+    group_stats = {
+        group.id: {
+            "num_users": len(group.members)
+        }
+        for group in groups
+    }
+
+    return render_template(
+        "admin.html",
+        users=users,
+        groups=groups,
+        user_stats=user_stats,
+        group_stats=group_stats,
+        UserRole=UserRole
+    )
+
+@app.route('/admin/users/<int:user_id>/promote', methods=['POST'])
+@login_required
+def admin_promote_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    user = db.session.get(User, user_id)
+    if user and user.role != UserRole.ADMIN:
+        user.role = UserRole.ADMIN
+        db.session.commit()
+        flash(f"{user.username} has been promoted to admin.", "info")
+
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    user = db.session.get(User, user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"{user.username} has been deleted.", "danger")
+
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/groups/<int:group_id>/edit', methods=['POST'])
+@login_required
+def admin_edit_group(group_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    group = db.session.get(Group, group_id)
+    if not group:
+        abort(404)
+
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if name:
+        group.name = name
+    group.description = description
+
+    db.session.commit()
+    flash(f"Group '{group.name}' updated.", "success")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/groups/<int:group_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_group(group_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    group = db.session.get(Group, group_id)
+    if group:
+        db.session.delete(group)
+        db.session.commit()
+        flash(f"Group '{group.name}' deleted.", "danger")
+
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/users/<int:user_id>/verify', methods=['POST'])
+@login_required
+def admin_verify_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(404)
+
+    user.is_verified = True
+    user.verification_token = ""
+    db.session.commit()
+
+    flash(f"{user.username}'s email address has been verified.", "success")
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/groups/<int:group_id>/remove/<int:user_id>', methods=['POST'])
+@login_required
+def admin_remove_user_from_group(group_id, user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    group = db.session.get(Group, group_id)
+    user = db.session.get(User, user_id)
+
+    if not group or not user:
+        abort(404)
+
+    if user in group.members:
+        group.members.remove(user)
+        db.session.commit()
+        flash(f"{user.username} has been removed from {group.name}.", "info")
+
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/users/<int:user_id>/demote', methods=['POST'])
+@login_required
+def admin_demote_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    user = db.session.get(User, user_id)
+    if user and user.role == UserRole.ADMIN and user.id != current_user.id:
+        user.role = UserRole.USER
+        db.session.commit()
+        flash(f"{user.username} has been demoted to regular user.", "info")
+
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/users/<int:user_id>/edit', methods=['POST'])
+@login_required
+def admin_edit_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(404)
+
+    new_username = request.form.get("username", "").strip()
+    if new_username and new_username != user.username:
+        existing_user = db.session.scalar(sa.select(User).where(User.username == new_username))
+        if existing_user:
+            flash("Username already exists.", "danger")
+        else:
+            user.username = new_username
+            db.session.commit()
+            flash(f"Username updated to {new_username}.", "success")
+
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/groups/<int:group_id>/add_user', methods=['POST'])
+@login_required
+def admin_add_user_to_group(group_id):
+    if current_user.role != UserRole.ADMIN:
+        abort(403)
+
+    username = request.form.get("username", "").strip()
+    group = db.session.get(Group, group_id)
+    user = db.session.scalar(sa.select(User).where(User.username == username))
+
+    if not group or not user:
+        flash("Group or user not found.", "danger")
+    elif user in group.members:
+        flash("User is already in the group.", "info")
+    else:
+        group.members.append(user)
+        db.session.commit()
+        flash(f"Added {user.username} to {group.name}.", "success")
+
+    return redirect(url_for('admin_panel'))
+
+
+

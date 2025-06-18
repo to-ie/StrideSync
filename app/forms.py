@@ -21,7 +21,6 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('SIGN IN')
 
-
 class RegisterForm(FlaskForm):
     email = StringField('Email', validators=[
         DataRequired(message='Email address is required.'),
@@ -72,3 +71,27 @@ class CreateGroupForm(FlaskForm):
         Optional(), Length(max=500)
     ])
     submit = SubmitField("Create Group")
+
+class AccountForm(FlaskForm):
+    username = StringField('Username', validators=[
+        DataRequired(message='Let us know what we should call you!'),
+        Length(min=4, max=64, message='Choose a different username (min 4 characters).')
+    ])
+
+    email = StringField('Email', validators=[
+        DataRequired(message='Email address is required.'),
+        Email(message='Please enter a valid email address.'),
+        Length(max=120)
+    ])
+
+    password = PasswordField('New password', validators=[
+        Optional(),
+        Length(min=6, message="Password must be at least 6 characters.")
+    ])
+
+    password2 = PasswordField('Confirm new password', validators=[
+        Optional(),
+        EqualTo('password', message="Passwords don't match.")
+    ])
+
+    submit = SubmitField("Update Account")

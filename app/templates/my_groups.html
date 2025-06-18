@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <h1 class="display-4 fw-bold mb-4 hero-title">My <span>Groups</span></h1>
+    <p class="lead text-muted">Create or explore groups you're in.</p>
+
+    <!-- Create Group Button -->
+    <div class="d-flex justify-content-end mb-4">
+      <button class="btn btn-soft btn-sm" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+        <i class="bi bi-plus-lg"></i> Create Group
+      </button>
+    </div>
+
+    {% if groups %}
+    <div class="row g-3">
+      {% for group in groups %}
+      <div class="col-md-4">
+        <div class="border rounded p-3 bg-light h-100 shadow-sm position-relative">
+          <h5 class="mb-1">{{ group.name }}</h5>
+          <p class="small text-muted mb-2">{{ group.description[:80] }}</p>
+          {% if group in current_user.admin_of_groups %}
+            <span class="badge bg-warning text-dark">Group admin</span>
+          {% endif %}
+          <a href="{{ url_for('view_group', group_id=group.id) }}" class="stretched-link" tabindex="-1" aria-hidden="true"></a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-muted">You're not in any groups yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Create Group Modal -->
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('create_group') }}">
+      {{ create_group_form.hidden_tag() }}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create New Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ create_group_form.name.label }}
+            {{ create_group_form.name(class="form-control") }}
+          </div>
+          <div class="mb-3">
+            {{ create_group_form.description.label }}
+            {{ create_group_form.description(class="form-control") }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-dark">Create Group</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if session.open_group_modal %}
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    new bootstrap.Modal(document.getElementById('createGroupModal')).show();
+  });
+</script>
+{% set _ = session.pop("open_group_modal") %}
+{% endif %}
+{% endblock %}
