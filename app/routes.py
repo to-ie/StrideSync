@@ -1033,16 +1033,30 @@ def admin_edit_user(user_id):
         abort(404)
 
     new_username = request.form.get("username", "").strip()
+    new_email = request.form.get("email", "").strip()
+
     if new_username and new_username != user.username:
         existing_user = db.session.scalar(sa.select(User).where(User.username == new_username))
         if existing_user:
             flash("Username already exists.", "danger")
-        else:
-            user.username = new_username
-            db.session.commit()
-            flash(f"Username updated to {new_username}.", "success")
+            return redirect(url_for("admin_panel"))
+        user.username = new_username
 
-    return redirect(url_for('admin_panel'))
+    if new_email and new_email != user.email:
+        existing_email = db.session.scalar(sa.select(User).where(User.email == new_email))
+        if existing_email:
+            flash("Email address already exists.", "danger")
+            return redirect(url_for("admin_panel"))
+        user.email = new_email
+        # 🛑 DO NOT require re-verification
+        user.is_verified = True
+        user.verification_token = ""
+
+    db.session.commit()
+    flash(f"User updated successfully.", "success")
+    return redirect(url_for("admin_panel"))
+
+
 
 @app.route('/admin/groups/<int:group_id>/add_user', methods=['POST'])
 @login_required
