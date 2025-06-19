@@ -17,7 +17,7 @@
           Track your progress, climb leaderboards, and keep each other moving.
         </p>
 
-        <div class="d-flex gap-3 animate-on-scroll delay-3">
+        <div class="d-flex flex-column flex-sm-row gap-3 animate-on-scroll delay-3">
           <a class="btn btn-dark btn-lg px-4" href="{{ url_for('login') }}">GET STARTED</a>
           <a class="btn btn-soft btn-lg px-4" href="#about">LEARN MORE</a>
         </div>
@@ -26,7 +26,7 @@
       <!-- Image Column -->
       <div class="col-lg-6 text-center position-relative animate-on-scroll up40 delay-2">
         <img src="{{ url_for('static', filename='img/runner.png') }}"
-             height="500" class="img-fluid" alt="Runner illustration">
+             class="img-fluid" style="max-height: 450px;" alt="Runner illustration">
       </div>
     </div>
   </div>
@@ -49,14 +49,16 @@
       </div>
 
       <!-- Second Column -->
-      <div class="col-md-4 d-flex flex-column animate-on-scroll delay-2">
+      <div class="col-md-4 d-flex flex-column animate-on-scroll delay-2"">
         <div class="mt-auto">
-          <div class="feature-card mb-3" style="background: #f33e78;">
-            <h3 class="mb-0">{{ user_count }}</h3>
-            <p>Registered Users</p>
+          <!-- Registered Users Card -->
+          <div class="feature-card mb-3 text-center" style="background-color: #f33e78;">
+            <h3 class="mb-0 fw-bold display-6">{{ user_count }}</h3>
+            <p class="text-muted" style="color: #FFF !important;"">Registered Users</p>
           </div>
-          <div class="feature-card" style="background: #666; color: white;">
-            <h3 class="mb-0">{{ total_distance|round(0, 'floor') }} km</h3>
+          <!-- Total Distance Card -->
+          <div class="feature-card text-center" style="background: #666; color: white;">
+            <h3 class="mb-0 fw-bold display-6">{{ total_distance|round(0, 'floor') }} km</h3>
             <p>Collectively logged</p>
           </div>
         </div>
@@ -65,10 +67,10 @@
       <!-- Third Column -->
       <div class="col-md-4 d-flex flex-column animate-on-scroll delay-3">
         <div class="mt-auto">
-          <div class="feature-card" style="background: #b7a7c6; color: white;">
+          <div class="feature-card text-center" style="background: #b7a7c6; color: white;">
             <h3 class="mb-0">Completely FREE!</h3>
             <p>Because we’re all about good vibes</p>
-            <a href="#" class="text-decoration-none fw-semibold" style="color: #FFF;">SEE HOW YOU CAN HELP →</a>
+            <a href="#" class="text-decoration-none fw-semibold" style="color: #FFF;" data-bs-toggle="modal" data-bs-target="#helpModal">SEE HOW YOU CAN HELP →</a>
           </div>
         </div>
       </div>
@@ -90,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Feature Card 2: Removed "Group Challenges" -->
+      <!-- Feature Card 2 -->
       <div class="col-md-3 col-sm-6 animate-on-scroll delay-2">
         <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
           <i class="bi bi-people fs-1 text-success mb-3"></i>
@@ -108,7 +110,7 @@
         </div>
       </div>
 
-      <!-- Feature Card 4: Removed "Motivation & Chat" -->
+      <!-- Feature Card 4 -->
       <div class="col-md-3 col-sm-6 animate-on-scroll delay-4">
         <div class="feature-box p-4 rounded shadow-sm text-start bg-white h-100">
           <i class="bi bi-heart-pulse fs-1 text-danger mb-3"></i>
@@ -135,8 +137,6 @@
         </div>
       </div>
 
-      <!-- Removed Feature Card 7 (Wearable Sync) -->
-
       <!-- CTA Card -->
       <div class="col-md-3 col-sm-6 animate-on-scroll delay-4">
         <div class="feature-box p-4 rounded text-white text-center h-100" style="background: #f8943e;">
@@ -162,7 +162,7 @@
     <div class="ms-lg-5 ps-lg-5 bg-pink text-white rounded-4 p-5 position-relative z-2">
       <div class="row align-items-center">
         <div class="col-lg-6 offset-lg-6">
-          <h2 class="fw-bold mb-3" style="letter-spacing: -1px; font-weight: 800 !important;">Take a sneak peek inside!</h2>
+          <h2 class="fw-bold mb-3" style="letter-spacing: -1px;">Take a sneak peek inside!</h2>
           <p class="mb-4">From solo runs to shared milestones, see how StrideSync keeps you moving with energy, ease, and fun.</p>
 
           <div class="row mb-4">
@@ -179,6 +179,7 @@
   </div>
 </section>  
 
+<!-- Final CTA -->
 <section class="features-section py-5">
   <div class="container">
     <a href="{{ url_for('register') }}"
@@ -188,8 +189,28 @@
   </div>
 </section>
 
-<div class="my-5">
-  <br><br>
+<div class="my-5"><br><br></div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header">
+        <h5 class="modal-title" id="helpModalLabel">Want to support StrideSync?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">We’re building this for the joy of it — but every bit of support helps. Here's how you can pitch in:</p>
+        <ul class="list-unstyled ps-3">
+          <li class="mb-3"><i class="bi bi-megaphone me-2 text-primary"></i>Tell a friend, family member, or fellow runner about StrideSync</li>
+          <li class="mb-3"><i class="bi bi-share me-2 text-success"></i>Share this site on your socials or running group chat</li>
+          <li class="mb-3"><i class="bi bi-graph-up-arrow me-2 text-warning"></i>Use the platform — your activity helps us grow and improve</li>
+          <li class="mb-3"><i class="bi bi-chat-dots me-2 text-info"></i>Send us feedback — ideas, bugs, or encouragement welcome!</li>
+          <li class="mb-3"><i class="bi bi-cup-hot me-2 text-danger"></i><strong><a href="https://www.buymeacoffee.com/toie" target="_blank" class="text-danger text-decoration-none">Buy me a coffee</a></strong> if you’d like to support the time & effort ❤️</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

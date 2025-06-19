@@ -9,6 +9,7 @@
       Great to see you back on StrideSync.
     </p>
 
+
     <!-- Activity Map -->
     <div class="mb-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -19,41 +20,62 @@
       </div>
       <div class="rounded border p-3 bg-white shadow-sm" style="overflow-x: auto;">
         <div class="d-flex flex-column">
-          <div class="d-flex mb-1" style="margin-left: 30px; gap: 4px;">
-            <div style="width: 30px;"></div>
-            {% for month in month_labels %}
-              <div style="width: 14px; text-align: center; font-size: 0.75rem;">{{ month }}</div>
-            {% endfor %}
-          </div>
-          <div class="d-flex" style="gap: 4px;">
-            <div class="d-flex flex-column justify-content-between me-1" style="height: 112px;">
-              <div style="font-size: 0.7rem;">Mon</div>
-              <div style="font-size: 0.7rem;">Wed</div>
-              <div style="font-size: 0.7rem;">Fri</div>
-            </div>
-            {% for week in heatmap_cells %}
-              <div class="d-flex flex-column" style="gap: 4px;">
-                {% for cell in week %}
-                  {% if cell %}
-                    <div
-                      title="{% if cell.active %}{{ '%.1f'|format(cell.distance) }} km on {{ cell.date.strftime('%d-%m-%y') }}{% else %}{{ cell.date.strftime('%d-%m-%y') }}{% endif %}"
-                      style="
-                        width: 14px;
-                        height: 14px;
-                        border-radius: 2px;
-                        background-color: {{ '#f33e78' if cell.active else '#e2e2e2' }};
-                        transition: background-color 0.2s;">
-                    </div>
-                  {% else %}
-                    <div style="width: 14px; height: 14px; background-color: transparent;"></div>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% endfor %}
-          </div>
+
+    <!-- Month Labels -->
+    <div class="d-flex mb-1" style="margin-left: 2px; gap: 4px;">
+      <div style="width: 20px;"></div>
+      {% for week_index in range(heatmap_cells|length) %}
+        {% set label = month_labels.get(week_index) %}
+        <div class="
+            {% if week_index == 0 %} d-md-none {% endif %}
+            {% if week_index < (heatmap_cells|length - 13) %} hidden-mobile {% endif %}
+          "
+          style="width: 14px; text-align: center; font-size: 0.75rem;">
+          {{ label or '' }}
         </div>
-      </div>
+      {% endfor %}
     </div>
+
+
+    <!-- Day Labels and Heatmap -->
+    <div class="d-flex" style="gap: 4px;">
+      <div class="d-flex flex-column me-1" style="gap: 9px; font-size: 0.7rem; text-align: right;">
+        <div>Mon</div>
+        <div> </div>
+        <div>Wed</div>
+        <div> </div>
+        <div>Fri</div>
+        <div> </div>
+        <div>Sun</div>
+      </div>
+
+      {% for week in heatmap_cells %}
+        <div class="d-flex flex-column heatmap-col {% if loop.index0 < (heatmap_cells|length - 13) %}hidden-mobile{% endif %}" style="gap: 4px;">
+          {% for cell in week %}
+            {% if cell %}
+              <div
+                title="{% if cell.active %}{{ '%.1f'|format(cell.distance) }} km on {{ cell.date.strftime('%d-%m-%y') }}{% else %}{{ cell.date.strftime('%d-%m-%y') }}{% endif %}"
+                style="
+                  width: 14px;
+                  height: 14px;
+                  border-radius: 2px;
+                  background-color: {{ '#f33e78' if cell.active else '#e2e2e2' }};
+                  transition: background-color 0.2s;">
+              </div>
+            {% else %}
+              <div style="width: 14px; height: 14px; background-color: transparent;"></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+</div>
+
+
+    <div class="my-2"><br></div>
 
     <!-- Recent Activity -->
     <div class="mb-5">
@@ -158,7 +180,7 @@
         </a>
       </div>
       <div class="row g-3">
-        {% for group in current_user.groups %}
+        {% for group in sorted_groups %}
         <div class="col-md-4">
           <div class="border rounded p-3 bg-light h-100 shadow-sm position-relative">
             <h5 class="mb-1">{{ group.name }}</h5>

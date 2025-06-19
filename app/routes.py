@@ -223,6 +223,9 @@ def datetimeformat(value, format='%d-%m-%y'):
         value = datetime.strptime(value, "%Y-%m-%d")
     return value.strftime(format)
 
+
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -230,30 +233,25 @@ def dashboard():
         sa.select(Run).where(Run.user_id == current_user.id)
     ).all()
 
+    sorted_groups = sorted(current_user.groups, key=lambda g: g.id, reverse=True)
+
+    # Aggregate distance per day
     distance_by_date = {}
     for run in runs:
         run_date = run.date.date()
         distance_by_date[run_date] = distance_by_date.get(run_date, 0) + run.distance
 
+    # Start date: 52 weeks ago (rounded back to previous Monday)
     today = datetime.utcnow().date()
     start_date = today - timedelta(days=364)
     while start_date.weekday() != 0:
         start_date -= timedelta(days=1)
 
+    # Build heatmap
     heatmap_cells = []
-    month_labels = []
-    current_month = None
-
     for week in range(53):
         column = []
         week_start = start_date + timedelta(weeks=week)
-
-        if week_start.month != current_month:
-            month_labels.append(month_abbr[week_start.month])
-            current_month = week_start.month
-        else:
-            month_labels.append("")
-
         for day in range(7):
             date = week_start + timedelta(days=day)
             if date > today:
@@ -266,6 +264,20 @@ def dashboard():
                 })
         heatmap_cells.append(column)
 
+    # Build month_labels for the first week of each month
+    month_labels = {}
+    current_month = None
+    for i, week in enumerate(heatmap_cells):
+        for cell in week:
+            if cell:
+                cell_month = cell["date"].month
+                if cell_month != current_month:
+                    current_month = cell_month
+                    month_labels[i] = cell["date"].strftime('%b')
+                break
+
+
+    # Recent runs
     recent_runs = db.session.scalars(
         sa.select(Run)
         .where(Run.user_id == current_user.id)
@@ -273,7 +285,7 @@ def dashboard():
         .limit(5)
     ).all()
 
-
+    # Forms
     form = LogActivityForm()
     form.groups.choices = [(g.id, g.name) for g in current_user.groups]
 
@@ -282,7 +294,6 @@ def dashboard():
 
     delete_form = DeleteRunForm()
     create_group_form = CreateGroupForm()
-
 
     return render_template(
         "dashboard.html",
@@ -294,7 +305,8 @@ def dashboard():
         form=form,
         edit_form=edit_form,
         delete_form=delete_form, 
-        create_group_form=create_group_form
+        create_group_form=create_group_form,
+        sorted_groups=sorted_groups
     )
 
 @app.route('/log_activity', methods=['POST'])
@@ -707,10 +719,11 @@ def my_activities():
 @app.route('/my-groups')
 @login_required
 def my_groups():
+    sorted_groups = sorted(current_user.groups, key=lambda g: g.id, reverse=True)
     create_group_form = CreateGroupForm()
     return render_template(
         "my_groups.html",
-        groups=current_user.groups,
+        groups=sorted_groups,
         create_group_form=create_group_form,
         user=current_user
     )

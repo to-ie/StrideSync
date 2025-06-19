@@ -1,284 +1,117 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-5">
+<div class="container py-5 px-3 px-md-4">
   <h1 class="display-4 fw-bold hero-title">Administration</h1>
   <p class="lead text-muted mb-4">Manage users and groups.</p>
 
   <!-- USERS TABLE -->
   <div class="mb-5">
     <h3>Users</h3>
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Verified</th>
-          <th>Runs</th>
-          <th>Groups</th>
-          <th class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %}
-        <tr>
-          <td>{{ user.username }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.role.value }}</td>
-          <td>{{ 'Yes' if user.is_verified else 'No' }}</td>
-          <td>{{ user_stats[user.id].num_runs }}</td>
-          <td>{{ user_stats[user.id].num_groups }}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-soft" data-bs-toggle="modal" data-bs-target="#editUserModal"
-                    onclick="prepareEditUser({{ user.id }}, '{{ user.username }}')">Edit</button>
-
-            {% if user.role.name == 'ADMIN' and user.id != current_user.id %}
-              <form method="POST" action="{{ url_for('admin_demote_user', user_id=user.id) }}" class="d-inline">
-                <button class="btn btn-sm btn-outline-secondary">Remove Admin</button>
-              </form>
-            {% elif user.role.name != 'ADMIN' %}
-              <form method="POST" action="{{ url_for('admin_promote_user', user_id=user.id) }}" class="d-inline">
-                <button class="btn btn-sm btn-outline-warning">Make Admin</button>
-              </form>
-            {% endif %}
-
-            {% if not user.is_verified %}
-              <form method="POST" action="{{ url_for('admin_verify_user', user_id=user.id) }}" class="d-inline">
-                <button class="btn btn-sm btn-outline-success">Verify</button>
-              </form>
-            {% endif %}
-
-            <button class="btn btn-sm btn-outline-danger"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deleteUserModal"
-                    onclick="prepareDeleteUser({{ user.id }}, '{{ user.username }}')">Delete</button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Verified</th>
+            <th>Runs</th>
+            <th>Groups</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>
+              <div class="text-truncate" style="max-width: 180px;" title="{{ user.email }}">
+                {{ user.email }}
+              </div>
+            </td>
+            <td>{{ user.role.value }}</td>
+            <td>{{ 'Yes' if user.is_verified else 'No' }}</td>
+            <td>{{ user_stats[user.id].num_runs }}</td>
+            <td>{{ user_stats[user.id].num_groups }}</td>
+            <td class="text-end">
+              <div class="d-grid gap-1 d-md-flex justify-content-md-end">
+                <button class="btn btn-sm btn-soft" data-bs-toggle="modal" data-bs-target="#editUserModal"
+                        onclick="prepareEditUser({{ user.id }}, '{{ user.username }}')">Edit</button>
+                {% if user.role.name == 'ADMIN' and user.id != current_user.id %}
+                  <form method="POST" action="{{ url_for('admin_demote_user', user_id=user.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-outline-secondary">Remove Admin</button>
+                  </form>
+                {% elif user.role.name != 'ADMIN' %}
+                  <form method="POST" action="{{ url_for('admin_promote_user', user_id=user.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-outline-warning">Make Admin</button>
+                  </form>
+                {% endif %}
+                {% if not user.is_verified %}
+                  <form method="POST" action="{{ url_for('admin_verify_user', user_id=user.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-outline-success">Verify</button>
+                  </form>
+                {% endif %}
+                <button class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteUserModal"
+                        onclick="prepareDeleteUser({{ user.id }}, '{{ user.username }}')">Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- GROUPS TABLE -->
   <div>
     <h3>Groups</h3>
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Users</th>
-          <th class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for group in groups %}
-        <tr>
-          <td>{{ group.name }}</td>
-          <td>{{ group.description[:60] }}{% if group.description|length > 60 %}…{% endif %}</td>
-          <td>{{ group_stats[group.id].num_users }}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-soft" data-bs-toggle="modal" data-bs-target="#editGroupModal"
-                    onclick="prepareEditGroup({{ group.id }}, '{{ group.name }}', `{{ group.description|e }}`)">Edit</button>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Users</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in groups %}
+          <tr>
+            <td>{{ group.name }}</td>
+            <td>
+              <div class="text-truncate" style="max-width: 200px;" title="{{ group.description }}">
+                {{ group.description[:60] }}{% if group.description|length > 60 %}…{% endif %}
+              </div>
+            </td>
+            <td>{{ group_stats[group.id].num_users }}</td>
+            <td class="text-end">
+              <div class="d-grid gap-1 d-md-flex justify-content-md-end">
+                <button class="btn btn-sm btn-soft" data-bs-toggle="modal" data-bs-target="#editGroupModal"
+                        onclick="prepareEditGroup({{ group.id }}, '{{ group.name }}', `{{ group.description|e }}`)">Edit</button>
 
-            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addUserToGroupModal"
-                    onclick="document.getElementById('addUserGroupId').value = '{{ group.id }}';">Add User</button>
+                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addUserToGroupModal"
+                        onclick="document.getElementById('addUserGroupId').value = '{{ group.id }}';">Add User</button>
 
-            <button class="btn btn-sm btn-outline-warning"
-                    data-bs-toggle="modal"
-                    data-bs-target="#removeUserFromGroupModal{{ group.id }}">
-              Remove User
-            </button>
+                <button class="btn btn-sm btn-outline-warning"
+                        data-bs-toggle="modal"
+                        data-bs-target="#removeUserFromGroupModal{{ group.id }}">
+                  Remove User
+                </button>
 
-            <button class="btn btn-sm btn-outline-danger"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deleteGroupModal"
-                    onclick="prepareDeleteGroup({{ group.id }}, '{{ group.name }}')">Delete</button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+                <button class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteGroupModal"
+                        onclick="prepareDeleteGroup({{ group.id }}, '{{ group.name }}')">Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
-
-<!-- MODALS -->
-
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="editUserForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit User</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="editUsername" class="form-label">Username</label>
-            <input type="text" class="form-control" name="username" id="editUsername" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary">Save Changes</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Delete User Modal -->
-<div class="modal fade" id="deleteUserModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="deleteUserForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Delete User</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete <strong id="deleteUserName"></strong>?</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-danger">Delete</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Edit Group Modal -->
-<div class="modal fade" id="editGroupModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="editGroupForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Group</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="editGroupName" class="form-label">Name</label>
-            <input type="text" class="form-control" name="name" id="editGroupName" required>
-          </div>
-          <div class="mb-3">
-            <label for="editGroupDescription" class="form-label">Description</label>
-            <textarea class="form-control" name="description" id="editGroupDescription" rows="3"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary">Update Group</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Delete Group Modal -->
-<div class="modal fade" id="deleteGroupModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="deleteGroupForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Delete Group</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete the group <strong id="deleteGroupName"></strong>?</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-danger">Delete</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Add User to Group Modal -->
-<div class="modal fade" id="addUserToGroupModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="addUserToGroupForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Add User to Group</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="addUserGroupId">
-          <div class="mb-3">
-            <label for="addUsername" class="form-label">Username</label>
-            <input type="text" class="form-control" name="username" id="addUsername" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-success">Add User</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Remove User from Group Modals -->
-{% for group in groups %}
-<div class="modal fade" id="removeUserFromGroupModal{{ group.id }}" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" id="removeUserFromGroupForm{{ group.id }}">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Remove User from {{ group.name }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Select a user</label>
-            <select class="form-select" name="user_id" id="removeUserSelect{{ group.id }}" required>
-              {% for user in group.members %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-warning">Remove</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<script>
-  document.getElementById('removeUserFromGroupForm{{ group.id }}').addEventListener('submit', function (e) {
-    const userId = document.getElementById('removeUserSelect{{ group.id }}').value;
-    this.action = `/admin/groups/{{ group.id }}/remove/${userId}`;
-  });
-</script>
-{% endfor %}
-
-<!-- JS for modal actions -->
-<script>
-  function prepareEditUser(id, username) {
-    document.getElementById('editUsername').value = username;
-    document.getElementById('editUserForm').action = `/admin/users/${id}/edit`;
-  }
-
-  function prepareDeleteUser(id, username) {
-    document.getElementById('deleteUserName').innerText = username;
-    document.getElementById('deleteUserForm').action = `/admin/users/${id}/delete`;
-  }
-
-  function prepareEditGroup(id, name, description) {
-    document.getElementById('editGroupName').value = name;
-    document.getElementById('editGroupDescription').value = description;
-    document.getElementById('editGroupForm').action = `/admin/groups/${id}/edit`;
-  }
-
-  function prepareDeleteGroup(id, name) {
-    document.getElementById('deleteGroupName').innerText = name;
-    document.getElementById('deleteGroupForm').action = `/admin/groups/${id}/delete`;
-  }
-
-  document.getElementById('addUserToGroupForm').addEventListener('submit', function (e) {
-    const groupId = document.getElementById('addUserGroupId').value;
-    this.action = `/admin/groups/${groupId}/add_user`;
-  });
-</script>
 {% endblock %}

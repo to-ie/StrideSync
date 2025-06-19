@@ -149,6 +149,15 @@ footer a:hover {
   font-size: 17px;
 }
 
+.feature-card-pink{
+  border-radius: 20px;
+  padding: 20px;
+  background-color: f33e78;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  color: #fff;
+  font-size: 17px;
+}
+
 .feature-card h3 {
   font-size: 40px;
   font-weight: 700;
@@ -232,8 +241,9 @@ footer a:hover {
    8. Navbar & Navigation
 -------------------------------------------------- */
 .navbar .dropdown-menu {
-  min-width: 200px;
+  min-width: 170px;
   font-size: 0.95rem;
+  position: absolute;
 }
 
 .navbar .dropdown-item:hover {
@@ -242,6 +252,11 @@ footer a:hover {
 
 .nav-link {
   color: #f33e78 !important;
+}
+
+.menubox{
+  margin-top: 10px;
+  margin-right: 10px;
 }
 
 /* --------------------------------------------------
@@ -368,6 +383,18 @@ footer {
 -------------------------------------------------- */
 @media (max-width: 991px) {
   .sneak-img-wrapper {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .heatmap-col.hidden-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
     display: none !important;
   }
 }
