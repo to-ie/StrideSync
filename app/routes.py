@@ -27,7 +27,7 @@ from app.utils.token import generate_group_invite_token, verify_group_invite_tok
 
 from app.email import (
     send_verification_email, send_group_invite_email, send_password_reset_email,
-    send_verification_email
+    send_contact_email
 )
 from app.utils.token import generate_group_invite_token
 
@@ -1065,3 +1065,31 @@ def internal_error(error):
     db.session.rollback()
     return render_template("500.html"), 500
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        message_body = request.form.get('message', '').strip()
+
+        if not name or not email or not message_body:
+            flash('Please fill in all fields.', 'danger')
+            return redirect(url_for('contact'))
+
+        try:
+            send_contact_email(name, email, message_body)
+            flash('Thanks for reaching out! We’ve received your message.', 'success')
+        except Exception as e:
+            flash('Oops, something went wrong while sending your message.', 'danger')
+
+        return redirect(url_for('contact'))
+
+    return render_template('contact.html')

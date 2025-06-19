@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/theodore/Documents/github/StrideSync/venv
+set -gx VIRTUAL_ENV /home/theodore/Documents/Github/StrideSync/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

@@ -124,3 +124,28 @@ def _build_email_html(title, greeting, body, action_url, action_label):
       </tr>
     </table>
     """
+
+def send_contact_email(name, email, message_text):
+    subject = f"New Contact Form Submission from {name}"
+    recipient = current_app.config.get('SUPPORT_EMAIL', 'support@stridesync.com')
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient])
+    
+    msg.body = f"""New message from StrideSync contact form:
+
+From: {name} <{email}>
+
+Message:
+{message_text}
+"""
+
+    msg.html = _build_email_html(
+        title="New Contact Form Submission",
+        greeting=f"From: {name} &lt;{email}&gt;",
+        body=message_text.replace('\n', '<br>'),
+        action_url="mailto:" + email,
+        action_label="Reply"
+    )
+
+    mail.send(msg)
