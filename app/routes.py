@@ -1133,7 +1133,3 @@ def contact():
 
     return render_template('contact.html')
 
-
-@app.route('/500')
-def trigger_error():
-    raise Exception("This is a test 500 error for email notification.")
