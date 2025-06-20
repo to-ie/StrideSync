@@ -16,7 +16,7 @@
     <div class="row g-3">
       {% for group in groups %}
       <div class="col-md-4">
-        <div class="border rounded p-3 bg-light h-100 shadow-sm position-relative">
+        <div class="border rounded p-3 bg-white h-100 shadow-sm position-relative">
           <h5 class="mb-1">{{ group.name }}</h5>
           <p class="small text-muted mb-2">{{ group.description[:80] }}</p>
           {% if group in current_user.admin_of_groups %}
