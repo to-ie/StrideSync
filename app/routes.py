@@ -27,7 +27,7 @@ from app.utils.token import generate_group_invite_token, verify_group_invite_tok
 
 from app.email import (
     send_verification_email, send_group_invite_email, send_password_reset_email,
-    send_contact_email
+    send_contact_email, send_admin_registration_alert
 )
 from app.utils.token import generate_group_invite_token
 
