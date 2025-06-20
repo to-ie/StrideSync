@@ -21,7 +21,7 @@
             <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
             <small class="text-muted">
               {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
-              {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} /km
+              {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} min/km
             </small>
           </div>
           <div class="d-flex gap-2">

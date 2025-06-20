@@ -36,7 +36,6 @@
       {% endfor %}
     </div>
 
-
     <!-- Day Labels and Heatmap -->
     <div class="d-flex" style="gap: 4px;">
       <div class="d-flex flex-column me-1" style="gap: 9px; font-size: 0.7rem; text-align: right;">
@@ -50,7 +49,7 @@
       </div>
 
       {% for week in heatmap_cells %}
-        <div class="d-flex flex-column heatmap-col {% if loop.index0 < (heatmap_cells|length - 13) %}hidden-mobile{% endif %}" style="gap: 4px;">
+        <div class="d-flex flex-column heatmap-col {% if loop.index0 < (heatmap_cells|length - 18) %}hidden-mobile{% endif %}" style="gap: 4px;">
           {% for cell in week %}
             {% if cell %}
               <div
@@ -88,7 +87,7 @@
                 <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
                 <small class="text-muted">
                   {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
-                  {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} /km
+                  {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} min/km
                 </small>
               </div>
               <div class="d-flex gap-2">
