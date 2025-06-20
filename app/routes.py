@@ -37,6 +37,8 @@ from app.forms import AccountForm
 
 from decimal import Decimal, ROUND_HALF_UP
 
+from collections import Counter, defaultdict
+
 
 @app.route('/')
 @app.route('/index')
@@ -236,6 +238,119 @@ def dashboard():
 
     sorted_groups = sorted(current_user.groups, key=lambda g: g.id, reverse=True)
 
+    # Prepare stats variables
+    if runs:
+        # Sort by date
+        runs_sorted = sorted(runs, key=lambda r: r.date)
+        first_run_date = runs_sorted[0].date.date()
+        last_run_date = runs_sorted[-1].date.date()
+        total_days = (last_run_date - first_run_date).days + 1
+        weeks_active = max(total_days // 7, 1)
+
+        distances = [r.distance for r in runs]
+        paces = [r.pace for r in runs if r.distance >= 1]
+        times = [r.time for r in runs]
+
+        # 🏆 Core
+        longest_run = max(distances)
+        fastest_pace = min(paces)
+        day_counts = Counter(r.date.strftime('%A') for r in runs)
+        most_frequent_day = day_counts.most_common(1)[0][0]
+
+        # Longest streak
+        date_set = set(r.date.date() for r in runs)
+        sorted_dates = sorted(date_set)
+        longest_streak = current_streak = temp_streak = 1
+        for i in range(1, len(sorted_dates)):
+            if (sorted_dates[i] - sorted_dates[i - 1]).days == 1:
+                temp_streak += 1
+                longest_streak = max(longest_streak, temp_streak)
+            else:
+                temp_streak = 1
+        # Current streak
+        today = datetime.utcnow().date()
+        streak = 0
+        for offset in range(0, 1000):
+            check = today - timedelta(days=offset)
+            if check in date_set:
+                streak += 1
+            else:
+                if offset == 0:  # didn't run today
+                    continue
+                break
+        current_streak = streak
+
+        # 🔄 Consistency
+        avg_runs_per_week = round(len(runs) / weeks_active, 1)
+
+        # Top months
+        month_counter = Counter(r.date.strftime('%b') for r in runs)
+        top_months = ', '.join(m[0] for m in month_counter.most_common(2))
+
+        # ⏱️ Performance (approximate matching for 5k/10k)
+        best_5k = best_10k = "–"
+        best_5k_time = min((r.time for r in runs if 4.8 <= r.distance <= 5.2), default=None)
+        best_10k_time = min((r.time for r in runs if 9.5 <= r.distance <= 10.5), default=None)
+        if best_5k_time:
+            best_5k = f"{int(best_5k_time // 60)}:{int(best_5k_time % 60):02d}"
+        if best_10k_time:
+            best_10k = f"{int(best_10k_time // 60)}:{int(best_10k_time % 60):02d}"
+
+        # 💪 Volume & Effort
+        total_distance = round(sum(distances), 2)
+        total_time_sec = sum(times)
+        total_hours = total_time_sec // 3600
+        total_minutes = (total_time_sec % 3600) // 60
+        avg_distance = round(sum(distances) / len(distances), 2)
+        avg_pace_sec = int(sum(paces) / len(paces)) if paces else 0
+        avg_pace = f"{avg_pace_sec // 60}:{avg_pace_sec % 60:02d}" if avg_pace_sec else "–"
+
+        # 📅 Time-Based
+        month_activity = Counter(r.date.strftime('%B') for r in runs)
+        most_active_month = month_activity.most_common(1)[0][0]
+        gaps = [(runs_sorted[i + 1].date - runs_sorted[i].date).days for i in range(len(runs_sorted) - 1)]
+        longest_gap = max(gaps) if gaps else 0
+
+        stats = {
+            "longest_run": round(longest_run, 2),
+            "fastest_pace": f"{int(fastest_pace // 60)}:{int(fastest_pace % 60):02d}",
+            "longest_streak": longest_streak,
+            "most_frequent_day": most_frequent_day,
+            "current_streak": current_streak,
+            "avg_runs_per_week": avg_runs_per_week,
+            "top_months": top_months,
+            "best_5k": best_5k,
+            "best_10k": best_10k,
+            "total_distance": total_distance,
+            "total_time": f"{int(total_hours)}h {int(total_minutes)}m",
+            "total_runs": len(runs),
+            "avg_distance": avg_distance,
+            "avg_pace": avg_pace,
+            "most_active_month": most_active_month,
+            "longest_gap": longest_gap,
+            "first_run_date": first_run_date.strftime('%d %b %Y')
+        }
+    else:
+        stats = {
+            "longest_run": "–",
+            "fastest_pace": "–",
+            "longest_streak": 0,
+            "most_frequent_day": "–",
+            "current_streak": 0,
+            "avg_runs_per_week": 0,
+            "top_months": "–",
+            "best_5k": "–",
+            "best_10k": "–",
+            "total_distance": 0,
+            "total_time": "0h 0m",
+            "total_runs": 0,
+            "avg_distance": 0,
+            "avg_pace": "–",
+            "most_active_month": "–",
+            "longest_gap": 0,
+            "first_run_date": "–"
+        }
+
     # Aggregate distance per day
     distance_by_date = {}
     for run in runs:
@@ -307,7 +422,8 @@ def dashboard():
         edit_form=edit_form,
         delete_form=delete_form, 
         create_group_form=create_group_form,
-        sorted_groups=sorted_groups
+        sorted_groups=sorted_groups,
+        stats=stats
     )
 
 @app.route('/log_activity', methods=['POST'])

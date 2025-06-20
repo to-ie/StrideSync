@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+
 <section class="py-5">
   <div class="container">
     <h1 class="display-4 fw-bold mb-4 hero-title">
@@ -71,6 +72,75 @@
   </div>
 </div>
 </div>
+
+    <!-- Running Stats Overview -->
+    <div class="mb-4">
+      <div class="row g-3">
+
+        <!-- 🏆 Core Stats -->
+        <div class="col-md-6">
+          <div class="card shadow-sm p-3 h-100">
+            <h5 class="fw-bold mb-2">🏆 Core Stats</h5>
+            <ul class="mb-0 small">
+              <li>Longest Run: <strong>{{ stats.longest_run }} km</strong></li>
+              <li>Fastest Pace: <strong>{{ stats.fastest_pace }}</strong> min/km</li>
+              <li>Longest Streak: <strong>{{ stats.longest_streak }} days</strong></li>
+              <li>Most Active Day: <strong>{{ stats.most_frequent_day }}</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 🔄 Consistency & Habits -->
+        <div class="col-md-6">
+          <div class="card shadow-sm p-3 h-100">
+            <h5 class="fw-bold mb-2">🔄 Consistency</h5>
+            <ul class="mb-0 small">
+              <li>Current Streak: <strong>{{ stats.current_streak }} days</strong></li>
+              <li>Runs per Week: <strong>{{ stats.avg_runs_per_week }}</strong></li>
+              <li>Most Active Months: <strong>{{ stats.top_months }}</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ⏱️ Performance -->
+        <div class="col-md-6">
+          <div class="card shadow-sm p-3 h-100">
+            <h5 class="fw-bold mb-2">⏱️ Performance</h5>
+            <ul class="mb-0 small">
+              <li>Best 5K Time: <strong>{{ stats.best_5k }}</strong></li>
+              <li>Best 10K Time: <strong>{{ stats.best_10k }}</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 💪 Volume & Effort -->
+        <div class="col-md-6">
+          <div class="card shadow-sm p-3 h-100">
+            <h5 class="fw-bold mb-2">💪 Volume & Effort</h5>
+            <ul class="mb-0 small">
+              <li>Total Distance: <strong>{{ stats.total_distance }} km</strong></li>
+              <li>Total Time: <strong>{{ stats.total_time }}</strong></li>
+              <li>Number of Runs: <strong>{{ stats.total_runs }}</strong></li>
+              <li>Avg Distance: <strong>{{ stats.avg_distance }} km</strong></li>
+              <li>Avg Pace: <strong>{{ stats.avg_pace }}</strong> min/km</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 📅 Time Highlights -->
+        <div class="col-12">
+          <div class="card shadow-sm p-3 h-100">
+            <h5 class="fw-bold mb-2">📅 Time-Based Highlights</h5>
+            <ul class="mb-0 small">
+              <li>Most Active Month: <strong>{{ stats.most_active_month }}</strong></li>
+              <li>Longest Break: <strong>{{ stats.longest_gap }} days</strong></li>
+              <li>First Run: <strong>{{ stats.first_run_date }}</strong></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
 
     <div class="my-2"><br></div>
