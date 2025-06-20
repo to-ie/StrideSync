@@ -3,7 +3,7 @@
   {% for run in runs %}
   <li class="list-group-item d-flex justify-content-between align-items-start">
     <div>
-      {{ run.date.strftime('%d %b %Y') }} — {{ run.distance }} km in {{ run.time // 60 }}m {{ run.time % 60 }}s
+      {{ run.date.strftime('%d %b %Y') }} — {{ run.distance }} km in {{ run.time // 60 }}m{{ run.time % 60 }}s
     </div>
     
     {% if current_user.id == run.user_id %}
