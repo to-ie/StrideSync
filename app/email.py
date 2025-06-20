@@ -177,7 +177,7 @@ You can view their details in the admin panel.
             f"<strong>Username:</strong> {user.username}<br>"
             f"<strong>Email:</strong> {user.email}<br>"
         ),
-        action_url=url_for('admin', _external=True),
+        action_url=url_for('admin_panel', _external=True),
         action_label="Open Admin Panel"
     )
 
