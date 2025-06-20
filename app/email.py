@@ -204,7 +204,7 @@ def send_admin_error_alert(error, traceback_str, request):
         <strong>Traceback:</strong><br>
         <pre style='font-size: 13px; background: #f1f1f1; padding: 10px; border-radius: 4px;'>{traceback_str}</pre>
         """,
-        action_url=url_for('admin_panel', _external=True),
+        action_url='https://dashboard.render.com/web/srv-d1a0rh3ipnbc739k8egg/logs',
         action_label="Open Admin Panel"
     )
 
