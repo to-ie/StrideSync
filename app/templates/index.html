@@ -158,6 +158,7 @@
            class="img-fluid rounded shadow offset-image"
            alt="Platform preview" style="max-width: 600px;">
     </div>
+    
 
     <div class="ms-lg-5 ps-lg-5 bg-pink text-white rounded-4 p-5 position-relative z-2">
       <div class="row align-items-center">
@@ -175,6 +176,13 @@
           <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-sm">GET STARTED TODAY</a>
         </div>
       </div>
+    </div>
+    <div class="mb-4"><br><br></div>
+    <!-- Mobile version -->
+    <div class="text-center d-block d-lg-none mb-4">
+      <img src="{{ url_for('static', filename='img/preview.png') }}"
+          class="img-fluid rounded shadow"
+          alt="Platform preview">
     </div>
   </div>
 </section>  
