@@ -26,10 +26,9 @@
       <div style="width: 20px;"></div>
       {% for week_index in range(heatmap_cells|length) %}
         {% set label = month_labels.get(week_index) %}
-        <div class="
-            {% if week_index == 0 %} d-md-none {% endif %}
-            {% if week_index < (heatmap_cells|length - 13) %} hidden-mobile {% endif %}
-          "
+        {% set is_visible = week_index >= (heatmap_cells|length - 18) %}
+        <div
+          class="{% if not is_visible %}hidden-mobile{% endif %}"
           style="width: 14px; text-align: center; font-size: 0.75rem;">
           {{ label or '' }}
         </div>
