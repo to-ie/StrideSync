@@ -182,3 +182,42 @@ You can view their details in the admin panel.
     )
 
     mail.send(msg)
+
+def send_admin_error_alert(error, traceback_str, request):
+    subject = "🚨 StrideSync: 500 Internal Server Error"
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    recipient = "toie@pm.me"
+
+    request_info = f"""
+    <strong>Path:</strong> {request.path}<br>
+    <strong>Method:</strong> {request.method}<br>
+    <strong>IP:</strong> {request.remote_addr}<br>
+    <strong>User Agent:</strong> {request.user_agent}<br>
+    """
+
+    html = _build_email_html(
+        title="🚨 500 Error on StrideSync",
+        greeting="Hi Admin,",
+        body=f"""
+        A 500 Internal Server Error occurred on the site:<br><br>
+        {request_info}
+        <strong>Traceback:</strong><br>
+        <pre style='font-size: 13px; background: #f1f1f1; padding: 10px; border-radius: 4px;'>{traceback_str}</pre>
+        """,
+        action_url=url_for('admin_panel', _external=True),
+        action_label="Open Admin Panel"
+    )
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient])
+    msg.body = f"""500 Internal Server Error
+
+Path: {request.path}
+Method: {request.method}
+IP: {request.remote_addr}
+User Agent: {request.user_agent}
+
+Traceback:
+{traceback_str}
+"""
+    msg.html = html
+    mail.send(msg)

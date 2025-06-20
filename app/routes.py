@@ -1092,6 +1092,16 @@ def forbidden_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
+
+    import traceback
+    from app.email import send_admin_error_alert
+
+    try:
+        tb = traceback.format_exc()
+        send_admin_error_alert(error, tb, request)
+    except Exception as e:
+        app.logger.error(f"Error sending admin alert email: {e}")
+
     return render_template("500.html"), 500
 
 @app.route('/privacy')
@@ -1122,3 +1132,8 @@ def contact():
         return redirect(url_for('contact'))
 
     return render_template('contact.html')
+
+
+@app.route('/500')
+def trigger_error():
+    raise Exception("This is a test 500 error for email notification.")
