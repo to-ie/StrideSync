@@ -355,7 +355,6 @@ def log_activity():
     session["open_activity_modal"] = True
     return redirect(url_for('dashboard'))
 
-
 @app.route('/edit_run/<int:run_id>', methods=['POST'])
 @login_required
 def edit_run(run_id):
@@ -393,7 +392,6 @@ def edit_run(run_id):
     db.session.commit()
     flash('Run updated.', 'success')
     return redirect(request.referrer or url_for('my_activities'))
-
 
 @app.route('/delete_run/<int:run_id>', methods=['POST'])
 @login_required
@@ -700,7 +698,6 @@ def leave_group(group_id):
         flash(f"You have left the group '{group.name}'.", "info")
 
     return redirect(url_for('dashboard'))
-
 
 @app.route('/my-activities')
 @login_required
