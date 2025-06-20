@@ -6,6 +6,7 @@ from flask_login import UserMixin
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from app import db, login
+from sqlalchemy import Numeric
 
 # ---------------------------
 # Enums
@@ -78,7 +79,7 @@ class Run(db.Model):
 
     id = sa.Column(sa.Integer, primary_key=True)
     date = sa.Column(sa.DateTime(timezone=True), index=True)
-    distance = sa.Column(sa.Integer)  # meters
+    distance = sa.Column(Numeric(precision=8, scale=2))  # replaces sa.Integer
     time = sa.Column(sa.Integer)      # seconds (duration)
     pace = sa.Column(sa.Integer)      # seconds per km
 
