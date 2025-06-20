@@ -149,3 +149,36 @@ Message:
     )
 
     mail.send(msg)
+
+def send_admin_registration_alert(user):
+    subject = "New User Registered on StrideSync"
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    recipient = "toie@pm.me"
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient])
+
+    # Plain text fallback
+    msg.body = f"""Hello,
+
+A new user just registered on StrideSync:
+
+Username: {user.username}
+Email: {user.email}
+
+You can view their details in the admin panel.
+"""
+
+    # HTML version (styled to match others)
+    msg.html = _build_email_html(
+        title="New User Registration",
+        greeting="Hello,",
+        body=(
+            f"A new user just registered on StrideSync:<br><br>"
+            f"<strong>Username:</strong> {user.username}<br>"
+            f"<strong>Email:</strong> {user.email}<br>"
+        ),
+        action_url=url_for('admin', _external=True),
+        action_label="Open Admin Panel"
+    )
+
+    mail.send(msg)

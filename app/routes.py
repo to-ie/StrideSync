@@ -128,6 +128,9 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        #email admin
+        send_admin_registration_alert(user)
+
         # Check for pending invite and auto-join
         group_id = session.pop("pending_invite_group_id", None)
         invited_email = session.pop("pending_invite_email", None)
