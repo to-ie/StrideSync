@@ -18,7 +18,7 @@
                 {% for name, dist in top_distance %}
                   <li class="list-group-item d-flex justify-content-between">
                     <span>{{ name }}</span>
-                    <span>{{ dist }} km</span>
+                    <span>{{ "%.2f"|format(dist) }} km</span>
                   </li>
                 {% endfor %}
               </ul>

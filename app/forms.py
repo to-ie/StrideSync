@@ -8,8 +8,7 @@ from wtforms.validators import (
     DataRequired, Email, EqualTo, Length, NumberRange, Optional
 )
 
-
-
+from decimal import ROUND_HALF_UP
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[
@@ -46,15 +45,15 @@ class RegisterForm(FlaskForm):
 
 class LogActivityForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired()])
-    distance = DecimalField('Distance (km)', validators=[DataRequired(), NumberRange(min=0.1)])
+    distance = DecimalField('Distance (km)', places=2, rounding=ROUND_HALF_UP,validators=[DataRequired(), NumberRange(min=0.1)])
     hours = IntegerField('Hours', default=0, validators=[NumberRange(min=0)])
     minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0, max=59)])
     groups = SelectMultipleField('Log to Groups', coerce=int)
 
 
 class EditRunForm(FlaskForm):
-    date = DateField('Date', validators=[DataRequired()])
-    distance = DecimalField('Distance (km)',places=3,rounding=None, validators=[DataRequired(), NumberRange(min=0.1)])
+    date = DateField('Date', format='%d-%m-%Y',validators=[DataRequired()])
+    distance = DecimalField('Distance (km)', places=2, rounding=ROUND_HALF_UP, validators=[DataRequired(), NumberRange(min=0.1)])
     hours = IntegerField('Hours', default=0, validators=[NumberRange(min=0)])
     minutes = IntegerField('Minutes', default=0, validators=[NumberRange(min=0, max=59)])
     groups = SelectMultipleField('Log to Groups', coerce=int)

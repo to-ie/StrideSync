@@ -35,6 +35,7 @@ import secrets
 
 from app.forms import AccountForm
 
+from decimal import Decimal, ROUND_HALF_UP
 
 
 @app.route('/')
@@ -223,9 +224,6 @@ def datetimeformat(value, format='%d-%m-%y'):
         value = datetime.strptime(value, "%Y-%m-%d")
     return value.strftime(format)
 
-
-
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -316,7 +314,9 @@ def log_activity():
     form.groups.choices = [(g.id, g.name) for g in current_user.groups]
 
     if form.validate_on_submit():
-        distance = float(form.distance.data)
+        raw_distance = form.distance.data
+        distance = float(raw_distance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
         total_seconds = (form.hours.data or 0) * 3600 + (form.minutes.data or 0) * 60
 
         if total_seconds == 0 or distance <= 0:
@@ -346,7 +346,7 @@ def log_activity():
         db.session.commit()
         flash("Activity logged successfully!", "success")
         session.pop("open_activity_modal", None)
-        return redirect(url_for('dashboard'))
+        return redirect(request.referrer or url_for('my_activities'))
 
     flash("There was an error logging your activity.", "danger")
     session["open_activity_modal"] = True
@@ -359,30 +359,37 @@ def edit_run(run_id):
     run = db.session.get(Run, run_id)
 
     if not run or run.user_id != current_user.id:
-        flash("You are not authorized to edit this run.", "warning") 
-        return redirect(url_for('dashboard')) 
+        flash("You are not authorized to edit this run.", "warning")
+        return redirect(url_for('dashboard'))
 
+    date = request.form.get('date')
+    raw_distance = request.form.get('distance')
+    time_minutes = request.form.get('time')
 
-    if run and run.user_id == current_user.id:
-        date = request.form.get('date')
-        distance = float(request.form.get('distance'))
-        time = int(request.form.get('time')) * 60  # seconds
+    try:
+        # Convert and round distance to 2 decimal places
+        distance = float(Decimal(raw_distance).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+        time = int(time_minutes) * 60  # total time in seconds
         pace = round(time / distance, 2) if distance > 0 else 0
+    except Exception as e:
+        flash("Invalid input. Please check your entries.", "danger")
+        return redirect(url_for('dashboard'))
 
-        run.date = datetime.strptime(date, "%Y-%m-%d")
-        run.distance = distance
-        run.time = time
-        run.pace = pace
+    # Update the run
+    run.date = datetime.strptime(date, "%Y-%m-%d")
+    run.distance = distance
+    run.time = time
+    run.pace = pace
 
-        # Update group associations
-        selected_group_ids = request.form.getlist('groups')
-        run.groups = db.session.scalars(
-            sa.select(Group).where(Group.id.in_(selected_group_ids))
-        ).all()
+    # Update group associations
+    selected_group_ids = request.form.getlist('groups')
+    run.groups = db.session.scalars(
+        sa.select(Group).where(Group.id.in_(selected_group_ids))
+    ).all()
 
-        db.session.commit()
-        flash('Run updated.', 'success')
-    return redirect(url_for('dashboard'))
+    db.session.commit()
+    flash('Run updated.', 'success')
+    return redirect(request.referrer or url_for('my_activities'))
 
 
 @app.route('/delete_run/<int:run_id>', methods=['POST'])
@@ -964,7 +971,6 @@ def admin_delete_group(group_id):
 
     return redirect(url_for('admin_panel'))
 
-
 @app.route('/admin/users/<int:user_id>/verify', methods=['POST'])
 @login_required
 def admin_verify_user(user_id):
@@ -981,7 +987,6 @@ def admin_verify_user(user_id):
 
     flash(f"{user.username}'s email address has been verified.", "success")
     return redirect(url_for('admin_panel'))
-
 
 @app.route('/admin/groups/<int:group_id>/remove/<int:user_id>', methods=['POST'])
 @login_required
@@ -1021,7 +1026,6 @@ def admin_demote_user(user_id):
 
     return redirect(url_for('admin_panel'))
 
-
 @app.route('/admin/users/<int:user_id>/edit', methods=['POST'])
 @login_required
 def admin_edit_user(user_id):
@@ -1055,8 +1059,6 @@ def admin_edit_user(user_id):
     db.session.commit()
     flash(f"User updated successfully.", "success")
     return redirect(url_for("admin_panel"))
-
-
 
 @app.route('/admin/groups/<int:group_id>/add_user', methods=['POST'])
 @login_required
