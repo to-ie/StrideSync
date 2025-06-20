@@ -86,7 +86,7 @@
               <div>
                 <strong>{{ run.date.strftime('%a, %d %b %Y') }}</strong><br>
                 <small class="text-muted">
-                  {{ run.distance }} km · {{ run.time // 60 }}m {{ run.time % 60 }}s · 
+                  {{ run.distance }} km · {{ run.time // 60 }} min · 
                   {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} min/km
                 </small>
               </div>
