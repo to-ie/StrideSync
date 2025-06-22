@@ -1,38 +1,42 @@
 {% if runs %}
 <ul class="list-group">
   {% for run in runs %}
-  <li class="list-group-item d-flex justify-content-between align-items-start">
-    <div>
-      {{ run.date.strftime('%d %b %Y') }} — {{ run.distance }} km in {{ run.time // 60 }} min · {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} min/km
-    </div>
-    
-    {% if current_user.id == run.user_id %}
-    <button class="btn btn-sm btn-outline-danger ms-3" data-bs-toggle="modal" data-bs-target="#removeModal-{{ run.id }}">
-      Remove from group
-    </button>
-
-    <!-- Remove Modal -->
-    <div class="modal fade" id="removeModal-{{ run.id }}" tabindex="-1" aria-labelledby="removeModalLabel-{{ run.id }}" aria-hidden="true">
-      <div class="modal-dialog">
-        <form method="POST" action="{{ url_for('remove_run_from_group', group_id=group_id, run_id=run.id) }}">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="removeModalLabel-{{ run.id }}">Remove from group</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              Are you sure you want to remove this run from the group?<br>
-              <strong>This will not delete the run</strong>, only its association with this group.
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-danger">Remove</button>
-            </div>
-          </div>
-        </form>
+  <li class="list-group-item">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
+      <div>
+        <b>{{ run.date.strftime('%d %b %Y') }}</b> <br> {{ run.distance }} km in {{ run.time // 60 }} min · {{ "%d:%02d" % (run.pace // 60, run.pace % 60) }} min/km
       </div>
+      
+      {% if current_user.id == run.user_id %}
+      <div class="mt-2 mt-md-0 ms-md-3 ">
+        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#removeModal-{{ run.id }}">
+          Remove from group
+        </button>
+      </div>
+
+      <!-- Remove Modal -->
+      <div class="modal fade" id="removeModal-{{ run.id }}" tabindex="-1" aria-labelledby="removeModalLabel-{{ run.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+          <form method="POST" action="{{ url_for('remove_run_from_group', group_id=group_id, run_id=run.id) }}">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel-{{ run.id }}">Remove from group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to remove this run from the group?<br>
+                <strong>This will not delete the run</strong>, only its association with this group.
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger">Remove</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
   </li>
   {% endfor %}
 </ul>
