@@ -562,50 +562,52 @@ def create_group():
     session['open_group_modal'] = True
     return redirect(url_for('dashboard'))
 
+
+
+
+from flask import render_template, request, abort, flash, redirect, url_for
+from datetime import datetime, timedelta
+from collections import defaultdict, Counter
+from sqlalchemy import func, select, desc
+
 @app.route('/groups/<int:group_id>')
 @login_required
 def view_group(group_id):
     group = db.session.get(Group, group_id)
     if not group:
         abort(404)
-    
 
-    # Check if the current user is part of the group
     if current_user not in group.members:
-        flash("You are not a member of this group.", "warning")  #
-        return redirect(url_for('dashboard')) 
+        flash("You are not a member of this group.", "warning")
+        return redirect(url_for('dashboard'))
 
-        
     # ✅ Top 5 by total distance (group-linked runs only)
     top_distance = db.session.execute(
         sa.select(
             User.username,
-            sa.func.sum(Run.distance).label('total_distance')
+            func.sum(Run.distance).label('total_distance')
         )
         .select_from(Run)
         .join(User, Run.user_id == User.id)
         .join(run_groups, run_groups.c.run_id == Run.id)
         .where(run_groups.c.group_id == group.id)
         .group_by(User.username)
-        .order_by(sa.desc('total_distance'))
+        .order_by(desc('total_distance'))
         .limit(5)
     ).all()
 
-    for row in top_distance:
-        print(row)
-
-    # ✅ Top 5 by number of runs (group-linked runs only)
+    # ✅ Top 5 by number of runs
     top_runs = db.session.execute(
-        sa.select(User.username, sa.func.count(Run.id).label('run_count'))
+        sa.select(User.username, func.count(Run.id).label('run_count'))
         .join(Run, Run.user_id == User.id)
         .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(run_groups.c.group_id == group_id)
+        .where(run_groups.c.group_id == group.id)
         .group_by(User.username)
-        .order_by(sa.desc('run_count'))
+        .order_by(desc('run_count'))
         .limit(5)
     ).all()
 
-    # ✅ Top 5 by best average pace (from last 5 group-linked runs per user)
+    # ✅ Top 5 by best average pace (last 5 runs)
     pace_data = []
     for user in group.members:
         recent_runs = db.session.scalars(
@@ -613,20 +615,19 @@ def view_group(group_id):
             .join(run_groups, run_groups.c.run_id == Run.id)
             .where(
                 Run.user_id == user.id,
-                run_groups.c.group_id == group_id
+                run_groups.c.group_id == group.id
             )
             .order_by(Run.date.desc())
             .limit(5)
         ).all()
         if recent_runs:
-            avg_pace = sum(run.pace for run in recent_runs) / len(recent_runs)
+            avg_pace = sum(r.pace for r in recent_runs) / len(recent_runs)
             pace_data.append((user.username, avg_pace))
-    top_pace = sorted(pace_data, key=lambda x: x[1])[:5]  # lower pace = faster
+    top_pace = sorted(pace_data, key=lambda x: x[1])[:5]
 
-    # ✅ Paginated user runs in the group
+    # ✅ Paginated user runs
     PER_PAGE = 5
     user_runs_paginated = {}
-
     for member in group.members:
         page = request.args.get(f'page_{member.id}', 1, type=int)
 
@@ -643,7 +644,7 @@ def view_group(group_id):
         ).all()
 
         run_count = db.session.scalar(
-            sa.select(sa.func.count(Run.id))
+            sa.select(func.count(Run.id))
             .join(run_groups, run_groups.c.run_id == Run.id)
             .where(
                 Run.user_id == member.id,
@@ -658,8 +659,78 @@ def view_group(group_id):
             "current": page,
         }
 
-    print("Top distance data:", top_distance)
-    
+    # ✅ Weekly group stats (group-linked + filtered by week)
+    today = datetime.utcnow().date()
+    start_of_week = today - timedelta(days=today.weekday())
+
+    weekly_runs = db.session.scalars(
+        sa.select(Run)
+        .join(run_groups, run_groups.c.run_id == Run.id)
+        .where(
+            run_groups.c.group_id == group.id,
+            Run.date >= start_of_week
+        )
+    ).all()
+
+    weekly_summary = defaultdict(list)
+    for run in weekly_runs:
+        weekly_summary[run.user_id].append(run)
+
+    group_distance = 0
+    group_time = 0
+    group_run_count = 0
+    group_paces = []
+    group_day_counts = Counter()
+    fastest_run = None
+    longest_run = None
+    user_weekly_stats = {}
+
+    for user_id, runs in weekly_summary.items():
+        dists = [r.distance for r in runs]
+        times = [r.time for r in runs]
+        paces = [r.pace for r in runs if r.distance >= 1]
+
+        user_distance = sum(dists)
+        user_time = sum(times)
+        user_runs = len(runs)
+        user_avg_pace = int(sum(paces) / len(paces)) if paces else None
+        user_longest_run = max(dists) if dists else None
+        user_fastest_pace = min(paces) if paces else None
+
+        user_weekly_stats[user_id] = {
+            "distance": round(user_distance, 2),
+            "runs": user_runs,
+            "time": user_time,
+            "avg_pace": user_avg_pace,
+            "longest_run": user_longest_run,
+            "fastest_pace": user_fastest_pace,
+        }
+
+        group_distance += user_distance
+        group_time += user_time
+        group_run_count += user_runs
+        group_paces.extend(paces)
+        group_day_counts.update([r.date.strftime('%A') for r in runs])
+
+        for r in runs:
+            if not fastest_run or r.pace < fastest_run.pace:
+                fastest_run = r
+            if not longest_run or r.distance > longest_run.distance:
+                longest_run = r
+
+    group_avg_pace = int(sum(group_paces) / len(group_paces)) if group_paces else None
+    most_active_day = group_day_counts.most_common(1)[0][0] if group_day_counts else "–"
+
+    group_weekly_stats = {
+        "total_distance": round(group_distance, 2),
+        "total_runs": group_run_count,
+        "total_time": group_time,
+        "avg_pace": group_avg_pace,
+        "most_active_day": most_active_day,
+        "fastest_run": fastest_run,
+        "longest_run": longest_run,
+        "user_stats": user_weekly_stats
+    }
 
     return render_template(
         "group.html",
@@ -668,8 +739,13 @@ def view_group(group_id):
         top_distance=top_distance,
         top_runs=top_runs,
         top_pace=top_pace,
-        user_runs_paginated=user_runs_paginated
+        user_runs_paginated=user_runs_paginated,
+        group_weekly_stats=group_weekly_stats
     )
+
+
+
+
 
 @app.route('/groups/<int:group_id>/invite', methods=['POST'])
 @login_required

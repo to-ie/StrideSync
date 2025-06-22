@@ -8,7 +8,7 @@
   <div class="row">
     <!-- Group Info -->
     <div class="col-md-8">
-      <div class="mb-5">
+      <div class="mb-2">
         <h4>Top Performers</h4>
         <div class="row">
           <div class="col-md-4">
@@ -60,6 +60,48 @@
           </div>
         </div>
       </div>
+
+      <div class="card p-3 mb-4">
+        <h5 class="fw-bold mb-3">📊 Weekly Group Stats</h5>
+        <ul class="small">
+          <li>Total Distance: <strong>{{ group_weekly_stats.total_distance }} km</strong></li>
+          <li>Total Runs: <strong>{{ group_weekly_stats.total_runs }}</strong></li>
+          <li>Total Time: <strong>{{ (group_weekly_stats.total_time // 3600)|int }}h {{ ((group_weekly_stats.total_time % 3600) // 60)|int }}m</strong></li>
+          <li>Average Pace: 
+            <strong>
+              {% if group_weekly_stats.avg_pace %}
+                {{ group_weekly_stats.avg_pace // 60 }}:{{ "%02d"|format(group_weekly_stats.avg_pace % 60) }} min/km
+              {% else %}–{% endif %}
+            </strong>
+          </li>
+          <li>Most Active Day: <strong>{{ group_weekly_stats.most_active_day }}</strong></li>
+          <li>Longest Run:
+            <strong>
+              {% if group_weekly_stats.longest_run %}
+                {{ group_weekly_stats.longest_run.distance }} km · 
+                {{ group_weekly_stats.longest_run.time // 60 }} min by
+                {{ group_weekly_stats.longest_run.user.username }}
+              {% else %}–{% endif %}
+            </strong>
+          </li>
+          <li>Fastest Run: 
+            <strong>
+              {% if group_weekly_stats.fastest_run %}
+                {{ group_weekly_stats.fastest_run.distance }} km · 
+                {{ group_weekly_stats.fastest_run.pace // 60 }}:{{ "%02d"|format(group_weekly_stats.fastest_run.pace % 60) }} min/km by
+                {{ group_weekly_stats.fastest_run.user.username }}
+              {% else %}–{% endif %}
+            </strong>
+          </li>
+        </ul>
+      </div>
+
+
+
+
+
+
+
       <!-- Member Activity Tabs -->
       <h4 class="mt-5">Member Activity</h4>
       <ul class="nav nav-tabs mt-3" id="memberTabs" role="tablist">
