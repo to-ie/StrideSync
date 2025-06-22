@@ -6,7 +6,8 @@ from flask_login import UserMixin
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from app import db, login
-from sqlalchemy import Numeric
+from sqlalchemy import Numeric, Boolean, String, Column
+
 
 # ---------------------------
 # Enums
@@ -56,6 +57,9 @@ class User(UserMixin, db.Model):
     role = sa.Column(sa.Enum(UserRole), default=UserRole.USER, nullable=False)
     is_verified = sa.Column(sa.Boolean, default=False)
     verification_token = sa.Column(sa.String(128), nullable=False, default=lambda: secrets.token_urlsafe(32))
+    unit_preference = Column(String(2), default='km')  # 'km' or 'mi'
+    notify_group_activity = Column(Boolean, default=True)
+    is_public_profile = Column(Boolean, default=False)
 
     reset_token = db.Column(db.String, nullable=True)
     reset_token_expiry = db.Column(db.DateTime, nullable=True)

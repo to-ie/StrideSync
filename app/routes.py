@@ -476,8 +476,6 @@ def dashboard():
         stats=stats
     )
 
-
-
 @app.route('/log_activity', methods=['POST'])
 @login_required
 def log_activity():
@@ -578,6 +576,7 @@ def delete_run(run_id):
 @app.route('/groups/create', methods=['POST'])
 @login_required
 def create_group():
+
     create_group_form = CreateGroupForm()
 
     if create_group_form.validate_on_submit():
@@ -611,8 +610,6 @@ def create_group():
     flash("Failed to create group. Please check the form.", "danger")
     session['open_group_modal'] = True
     return redirect(url_for('dashboard'))
-
-
 
 @app.route('/groups/<int:group_id>')
 @login_required
@@ -1382,6 +1379,7 @@ def terms():
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
@@ -1414,3 +1412,46 @@ def contact():
     captcha_question = f"What is {num1} {operator} {num2}?"
 
     return render_template('contact.html', captcha_question=captcha_question)
+
+@app.route("/update_preferences", methods=["POST"])
+@login_required
+def update_preferences():
+    current_user.unit_preference = request.form.get("unit_preference")
+    current_user.notify_group_activity = "notify_group_activity" in request.form
+    current_user.is_public_profile = "is_public_profile" in request.form
+    db.session.commit()
+    flash("Preferences updated.", "success")
+    return redirect(url_for("my_account"))
+
+@app.route("/u/<username>")
+def public_profile(username):
+    user = db.session.execute(
+        sa.select(User).where(User.username == username)
+    ).scalar_one_or_none()
+
+    if not user or not user.is_public_profile:
+        abort(404)
+
+    runs = (
+        db.session.execute(
+            sa.select(Run).where(Run.user_id == user.id).order_by(Run.date.desc())
+        )
+        .scalars()
+        .all()
+    )
+
+    # Calculate key stats
+    total_distance = sum(run.distance for run in runs)
+    total_runs = len(runs)
+    fastest_pace = min((run.pace for run in runs if run.pace), default=None)
+    longest_run = max((run.distance for run in runs), default=0)
+
+    return render_template(
+        "public_profile.html",
+        user=user,
+        runs=runs,
+        total_distance=total_distance,
+        total_runs=total_runs,
+        fastest_pace=fastest_pace,
+        longest_run=longest_run,
+    )

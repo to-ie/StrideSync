@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h1 class="display-4 fw-bold hero-title">
+    <span>{{ user.username.capitalize() }}</span>’s profile
+  </h1>
+  <p class="lead text-muted mb-4">Public stats from the last few months</p>
+
+    <!-- Key Stats -->
+    <div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+        <h6 class="text-muted">Total Distance</h6>
+        <h4 class="fw-bold">{{ "%.1f"|format(total_distance) }} km</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+        <h6 class="text-muted">Total Runs</h6>
+        <h4 class="fw-bold">{{ total_runs }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+        <h6 class="text-muted">Fastest Pace</h6>
+        <h4 class="fw-bold">
+            {% if fastest_pace %}
+            {% set pace_sec = fastest_pace|int %}
+            {{ pace_sec // 60 }}:{{ "%02d"|format(pace_sec % 60) }} min/km
+            {% else %}–{% endif %}
+        </h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+        <h6 class="text-muted">Longest Run</h6>
+        <h4 class="fw-bold">{{ "%.1f"|format(longest_run) }} km</h4>
+        </div>
+    </div>
+    </div>
+
+
+  <!-- Recent Runs -->
+  <div class="card p-4">
+    <h5 class="fw-bold mb-3">📅 Recent Runs</h5>
+    {% if runs %}
+      <ul class="list-group list-group-flush">
+        {% for run in runs %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ run.date.strftime('%d %b %Y') }}</strong> –
+                {{ run.distance }} km
+              </div>
+              <div class="text-muted small">
+                {{ run.time // 60 }}m {{ run.time % 60 }}s ·
+                Pace:
+                {% set pace_sec = run.pace|int %}
+                {{ pace_sec // 60 }}:{{ "%02d"|format(pace_sec % 60) }} min/km
+
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">No runs available.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
