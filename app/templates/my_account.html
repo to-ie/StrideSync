@@ -14,22 +14,22 @@
 
         <form method="POST" action="{{ url_for('update_preferences') }}">
           <!-- Units Preference -->
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label class="form-label">Preferred Units</label>
             <select class="form-select" name="unit_preference">
               <option value="km" {% if current_user.unit_preference == 'km' %}selected{% endif %}>Kilometers</option>
               <option value="mi" {% if current_user.unit_preference == 'mi' %}selected{% endif %}>Miles</option>
             </select>
-          </div>
+          </div> -->
 
           <!-- Activity Notification Toggle -->
-          <div class="form-check form-switch mb-3">
+          <!-- <div class="form-check form-switch mb-3">
             <input class="form-check-input" type="checkbox" name="notify_group_activity" id="notifyGroupActivity"
               {% if current_user.notify_group_activity %}checked{% endif %}>
             <label class="form-check-label" for="notifyGroupActivity">
               Notify me when someone logs a new run in my groups
             </label>
-          </div>
+          </div> -->
 
           <!-- Public Profile Toggle -->
           <div class="form-check form-switch mb-3">
@@ -39,6 +39,33 @@
               Make my profile public
             </label>
           </div>
+
+          <!-- Public Profile URL (only if public) -->
+        {% if current_user.is_public_profile %}
+          <div class="mb-3">
+            <label class="form-label">Your public profile URL</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="publicProfileURL" readonly
+                    value="{{ url_for('public_profile', username=current_user.username, _external=True) }}">
+              <button type="button" class="btn btn-outline-secondary" onclick="copyProfileURL(this)">Copy</button>
+            </div>
+            <small id="copyFeedback" class="form-text text-success d-none">Copied!</small>
+          </div>
+
+          <script>
+            function copyProfileURL(button) {
+              const input = document.getElementById("publicProfileURL");
+              navigator.clipboard.writeText(input.value).then(() => {
+                const feedback = document.getElementById("copyFeedback");
+                feedback.classList.remove("d-none");
+                setTimeout(() => {
+                  feedback.classList.add("d-none");
+                }, 2000);
+              });
+            }
+          </script>
+        {% endif %}
+
 
           <div class="text-end">
             <button type="submit" class="btn btn-dark">Save Preferences</button>
