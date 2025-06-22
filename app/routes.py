@@ -41,6 +41,9 @@ from collections import Counter, defaultdict
 
 import random
 
+from calendar import month_abbr
+
+
 
 
 @app.route('/')
@@ -232,8 +235,6 @@ def datetimeformat(value, format='%d-%m-%y'):
         value = datetime.strptime(value, "%Y-%m-%d")
     return value.strftime(format)
 
-
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -416,26 +417,36 @@ def dashboard():
     delete_form = DeleteRunForm()
     create_group_form = CreateGroupForm()
 
-    # ⏱️ Filter runs from the last 3 months
+    # 🗓️ Aggregate by week
     three_months_ago = datetime.utcnow().date() - timedelta(weeks=13)
     recent_runs = [r for r in runs if r.date.date() >= three_months_ago]
 
-    # 🗓️ Aggregate by date
-    distance_series = defaultdict(float)
-    pace_series = defaultdict(list)
+    weekly_distance = defaultdict(float)
+    weekly_paces = defaultdict(list)
+    weekly_labels = {}
 
     for r in recent_runs:
-        run_date = r.date.strftime("%Y-%m-%d")
-        distance_series[run_date] += float(r.distance)
-        if r.distance >= 1:
-            pace_series[run_date].append(float(r.pace))
+        run_date = r.date.date()
+        year, week, weekday = run_date.isocalendar()
+        monday = run_date - timedelta(days=weekday - 1)
+        sunday = monday + timedelta(days=6)
 
-    # Prepare chart data
-    chart_labels = sorted(distance_series.keys())
-    distance_data = [round(distance_series[date], 2) for date in chart_labels]
+        label = f"{monday.day}–{sunday.day} {month_abbr[monday.month]}"
+        key = f"{year}-W{week:02d}"
+
+        weekly_distance[key] += float(r.distance)
+        if r.distance >= 1:
+            weekly_paces[key].append(float(r.pace))
+
+        weekly_labels[key] = label
+
+    # Sort by week
+    sorted_keys = sorted(weekly_distance.keys())
+    chart_labels = [weekly_labels[k] for k in sorted_keys]
+    distance_data = [round(weekly_distance[k], 2) for k in sorted_keys]
     pace_data = [
-        round(sum(pace_series[date]) / len(pace_series[date]), 2) if pace_series[date] else None
-        for date in chart_labels
+        round(sum(weekly_paces[k]) / len(weekly_paces[k]), 2) if weekly_paces[k] else None
+        for k in sorted_keys
     ]
 
     progress_charts = {
@@ -746,11 +757,19 @@ def view_group(group_id):
         .where(run_groups.c.group_id == group.id, Run.date >= from_date)
     ).all()
 
+
     progress_data = defaultdict(lambda: defaultdict(float))
+    week_labels = {}
+
     for run in all_recent_runs:
-        year, week, _ = run.date.isocalendar()
+        run_date = run.date.date()
+        year, week, weekday = run_date.isocalendar()
+        monday = run_date - timedelta(days=weekday - 1)
+        sunday = monday + timedelta(days=6)
         key = f"{year}-W{week:02d}"
+        label = f"{monday.day}–{sunday.day} {month_abbr[monday.month]}"
         progress_data[key][run.user_id] += float(run.distance)
+        week_labels[key] = label
 
     sorted_weeks = sorted(progress_data.keys())
     user_lines = {
@@ -759,6 +778,7 @@ def view_group(group_id):
             for week in sorted_weeks
         ] for member in group.members
     }
+
 
     # ✅ Final weekly stats dict
     group_weekly_stats = {
@@ -779,7 +799,7 @@ def view_group(group_id):
             "data": [round(distance_by_day[d], 2) for d in day_labels]
         },
         "progress_chart": {
-            "labels": sorted_weeks,
+            "labels": [week_labels[w] for w in sorted_weeks],
             "series": user_lines
         }
     }
@@ -794,8 +814,6 @@ def view_group(group_id):
         user_runs_paginated=user_runs_paginated,
         group_weekly_stats=group_weekly_stats
     )
-
-
 
 
 @app.route('/groups/<int:group_id>/invite', methods=['POST'])
