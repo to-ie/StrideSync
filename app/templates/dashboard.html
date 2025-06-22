@@ -375,6 +375,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const ctx = document.getElementById('progressChart').getContext('2d');
+
+  const distanceData = {{ progress_charts.distance|tojson }};
+  const rawPaceData = {{ progress_charts.pace|tojson }};
+  const paceData = rawPaceData.map(p => p === null ? null : Number(p));
+
   const progressChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -382,17 +387,20 @@
       datasets: [
         {
           label: 'Distance (km)',
-          data: {{ progress_charts.distance|tojson }},
+          data: distanceData,
           borderColor: '#007bff',
           backgroundColor: 'rgba(0, 123, 255, 0.2)',
           yAxisID: 'y',
+          tension: 0.3,
         },
         {
           label: 'Pace (min/km)',
-          data: {{ progress_charts.pace|tojson }},
+          data: paceData,
           borderColor: '#dc3545',
           backgroundColor: 'rgba(220, 53, 69, 0.2)',
           yAxisID: 'y1',
+          tension: 0.3,
+          spanGaps: true,
         }
       ]
     },
@@ -421,6 +429,32 @@
           },
           grid: {
             drawOnChartArea: false,
+          },
+          ticks: {
+            callback: function(value) {
+              if (value == null || isNaN(value)) return '';
+              const mins = Math.floor(value);
+              const secs = Math.round((value - mins) * 60);
+              return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+          },
+          suggestedMin: 4,
+          suggestedMax: 9
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label;
+              const value = context.raw;
+              if (label === 'Pace (min/km)' && value != null) {
+                const mins = Math.floor(value);
+                const secs = Math.round((value - mins) * 60);
+                return `${label}: ${mins}:${secs.toString().padStart(2, '0')}`;
+              }
+              return `${label}: ${value}`;
+            }
           }
         }
       }

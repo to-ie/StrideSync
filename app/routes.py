@@ -444,10 +444,15 @@ def dashboard():
     sorted_keys = sorted(weekly_distance.keys())
     chart_labels = [weekly_labels[k] for k in sorted_keys]
     distance_data = [round(weekly_distance[k], 2) for k in sorted_keys]
-    pace_data = [
-        round(sum(weekly_paces[k]) / len(weekly_paces[k]), 2) if weekly_paces[k] else None
-        for k in sorted_keys
-    ]
+    pace_data = []
+    for k in sorted_keys:
+        if weekly_paces[k]:
+            avg_seconds = sum(weekly_paces[k]) / len(weekly_paces[k])
+            avg_minutes = avg_seconds / 60  # convert to min/km float
+            pace_data.append(round(avg_minutes, 2))
+        else:
+            pace_data.append(None)
+
 
     progress_charts = {
         "labels": chart_labels,
