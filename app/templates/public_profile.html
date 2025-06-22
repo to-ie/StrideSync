@@ -47,18 +47,16 @@
       <ul class="list-group list-group-flush">
         {% for run in runs %}
           <li class="list-group-item">
-            <div class="d-flex justify-content-between">
-              <div>
-                <strong>{{ run.date.strftime('%d %b %Y') }}</strong> –
-                {{ run.distance }} km
-              </div>
-              <div class="text-muted small">
-                {{ run.time // 60 }}m {{ run.time % 60 }}s ·
-                Pace:
-                {% set pace_sec = run.pace|int %}
-                {{ pace_sec // 60 }}:{{ "%02d"|format(pace_sec % 60) }} min/km
-
-              </div>
+            <div class="d-flex flex-column flex-md-row justify-content-between">
+                <div>
+                    <strong>{{ run.date.strftime('%d %b %Y') }}</strong> – {{ run.distance }} km
+                </div>
+                <div class="text-muted small mt-1 mt-md-0 text-md-end">
+                    {{ run.time // 60 }}m {{ run.time % 60 }}s ·
+                    Pace:
+                    {% set pace_sec = run.pace|int %}
+                    {{ pace_sec // 60 }}:{{ "%02d"|format(pace_sec % 60) }} min/km
+                </div>
             </div>
           </li>
         {% endfor %}
