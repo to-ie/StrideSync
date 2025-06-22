@@ -417,15 +417,15 @@ def dashboard():
     delete_form = DeleteRunForm()
     create_group_form = CreateGroupForm()
 
-    # 🗓️ Aggregate by week
+    # ⏱️ Aggregate by week
     three_months_ago = datetime.utcnow().date() - timedelta(weeks=13)
-    recent_runs = [r for r in runs if r.date.date() >= three_months_ago]
+    progress_runs = [r for r in runs if r.date.date() >= three_months_ago]
 
     weekly_distance = defaultdict(float)
     weekly_paces = defaultdict(list)
     weekly_labels = {}
 
-    for r in recent_runs:
+    for r in progress_runs:
         run_date = r.date.date()
         year, week, weekday = run_date.isocalendar()
         monday = run_date - timedelta(days=weekday - 1)
