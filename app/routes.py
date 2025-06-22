@@ -8,7 +8,7 @@ from flask_login import (
 
 import sqlalchemy as sa
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, desc
 from urllib.parse import urlsplit
 from datetime import datetime, timedelta
 from calendar import month_abbr
@@ -40,6 +40,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from collections import Counter, defaultdict
 
 import random
+
 
 
 @app.route('/')
@@ -231,6 +232,8 @@ def datetimeformat(value, format='%d-%m-%y'):
         value = datetime.strptime(value, "%Y-%m-%d")
     return value.strftime(format)
 
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -413,6 +416,34 @@ def dashboard():
     delete_form = DeleteRunForm()
     create_group_form = CreateGroupForm()
 
+    # ⏱️ Filter runs from the last 3 months
+    three_months_ago = datetime.utcnow().date() - timedelta(weeks=13)
+    recent_runs = [r for r in runs if r.date.date() >= three_months_ago]
+
+    # 🗓️ Aggregate by date
+    distance_series = defaultdict(float)
+    pace_series = defaultdict(list)
+
+    for r in recent_runs:
+        run_date = r.date.strftime("%Y-%m-%d")
+        distance_series[run_date] += float(r.distance)
+        if r.distance >= 1:
+            pace_series[run_date].append(float(r.pace))
+
+    # Prepare chart data
+    chart_labels = sorted(distance_series.keys())
+    distance_data = [round(distance_series[date], 2) for date in chart_labels]
+    pace_data = [
+        round(sum(pace_series[date]) / len(pace_series[date]), 2) if pace_series[date] else None
+        for date in chart_labels
+    ]
+
+    progress_charts = {
+        "labels": chart_labels,
+        "distance": distance_data,
+        "pace": pace_data
+    }
+
     return render_template(
         "dashboard.html",
         user=current_user,
@@ -425,8 +456,11 @@ def dashboard():
         delete_form=delete_form, 
         create_group_form=create_group_form,
         sorted_groups=sorted_groups,
+        progress_charts=progress_charts,
         stats=stats
     )
+
+
 
 @app.route('/log_activity', methods=['POST'])
 @login_required
@@ -564,12 +598,6 @@ def create_group():
 
 
 
-
-from flask import render_template, request, abort, flash, redirect, url_for
-from datetime import datetime, timedelta
-from collections import defaultdict, Counter
-from sqlalchemy import func, select, desc
-
 @app.route('/groups/<int:group_id>')
 @login_required
 def view_group(group_id):
@@ -581,12 +609,9 @@ def view_group(group_id):
         flash("You are not a member of this group.", "warning")
         return redirect(url_for('dashboard'))
 
-    # ✅ Top 5 by total distance (group-linked runs only)
+    # ✅ Top 5 by total distance
     top_distance = db.session.execute(
-        sa.select(
-            User.username,
-            func.sum(Run.distance).label('total_distance')
-        )
+        sa.select(User.username, func.sum(Run.distance).label('total_distance'))
         .select_from(Run)
         .join(User, Run.user_id == User.id)
         .join(run_groups, run_groups.c.run_id == Run.id)
@@ -607,51 +632,39 @@ def view_group(group_id):
         .limit(5)
     ).all()
 
-    # ✅ Top 5 by best average pace (last 5 runs)
+    # ✅ Top 5 by best average pace (last 5 group-linked runs)
     pace_data = []
     for user in group.members:
         recent_runs = db.session.scalars(
             sa.select(Run)
             .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == user.id,
-                run_groups.c.group_id == group.id
-            )
+            .where(Run.user_id == user.id, run_groups.c.group_id == group.id)
             .order_by(Run.date.desc())
             .limit(5)
         ).all()
         if recent_runs:
-            avg_pace = sum(r.pace for r in recent_runs) / len(recent_runs)
+            avg_pace = sum(float(r.pace) for r in recent_runs) / len(recent_runs)
             pace_data.append((user.username, avg_pace))
     top_pace = sorted(pace_data, key=lambda x: x[1])[:5]
 
-    # ✅ Paginated user runs
+    # ✅ Paginated runs per user
     PER_PAGE = 5
     user_runs_paginated = {}
     for member in group.members:
         page = request.args.get(f'page_{member.id}', 1, type=int)
-
         runs = db.session.scalars(
             sa.select(Run)
             .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
+            .where(Run.user_id == member.id, run_groups.c.group_id == group.id)
             .order_by(Run.date.desc())
             .limit(PER_PAGE)
             .offset((page - 1) * PER_PAGE)
         ).all()
-
         run_count = db.session.scalar(
             sa.select(func.count(Run.id))
             .join(run_groups, run_groups.c.run_id == Run.id)
-            .where(
-                Run.user_id == member.id,
-                run_groups.c.group_id == group.id
-            )
+            .where(Run.user_id == member.id, run_groups.c.group_id == group.id)
         )
-
         user_runs_paginated[member.id] = {
             "runs": runs,
             "total": run_count,
@@ -659,25 +672,26 @@ def view_group(group_id):
             "current": page,
         }
 
-    # ✅ Weekly group stats (group-linked + filtered by week)
+    # ✅ Weekly group stats
     today = datetime.utcnow().date()
     start_of_week = today - timedelta(days=today.weekday())
 
     weekly_runs = db.session.scalars(
         sa.select(Run)
         .join(run_groups, run_groups.c.run_id == Run.id)
-        .where(
-            run_groups.c.group_id == group.id,
-            Run.date >= start_of_week
-        )
+        .where(run_groups.c.group_id == group.id, Run.date >= start_of_week)
     ).all()
+
+    # Define day labels early
+    day_labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    distance_by_day = {day: 0.0 for day in day_labels}
 
     weekly_summary = defaultdict(list)
     for run in weekly_runs:
         weekly_summary[run.user_id].append(run)
 
-    group_distance = 0
-    group_time = 0
+    group_distance = 0.0
+    group_time = 0.0
     group_run_count = 0
     group_paces = []
     group_day_counts = Counter()
@@ -686,9 +700,9 @@ def view_group(group_id):
     user_weekly_stats = {}
 
     for user_id, runs in weekly_summary.items():
-        dists = [r.distance for r in runs]
-        times = [r.time for r in runs]
-        paces = [r.pace for r in runs if r.distance >= 1]
+        dists = [float(r.distance) for r in runs]
+        times = [float(r.time) for r in runs]
+        paces = [float(r.pace) for r in runs if r.distance >= 1]
 
         user_distance = sum(dists)
         user_time = sum(times)
@@ -710,9 +724,12 @@ def view_group(group_id):
         group_time += user_time
         group_run_count += user_runs
         group_paces.extend(paces)
-        group_day_counts.update([r.date.strftime('%A') for r in runs])
 
         for r in runs:
+            day = r.date.strftime("%A")
+            if day in distance_by_day:
+                distance_by_day[day] += float(r.distance)
+            group_day_counts[day] += 1
             if not fastest_run or r.pace < fastest_run.pace:
                 fastest_run = r
             if not longest_run or r.distance > longest_run.distance:
@@ -721,6 +738,29 @@ def view_group(group_id):
     group_avg_pace = int(sum(group_paces) / len(group_paces)) if group_paces else None
     most_active_day = group_day_counts.most_common(1)[0][0] if group_day_counts else "–"
 
+    # ✅ Progress chart (last 3 months)
+    from_date = today - timedelta(weeks=13)
+    all_recent_runs = db.session.scalars(
+        sa.select(Run)
+        .join(run_groups, run_groups.c.run_id == Run.id)
+        .where(run_groups.c.group_id == group.id, Run.date >= from_date)
+    ).all()
+
+    progress_data = defaultdict(lambda: defaultdict(float))
+    for run in all_recent_runs:
+        year, week, _ = run.date.isocalendar()
+        key = f"{year}-W{week:02d}"
+        progress_data[key][run.user_id] += float(run.distance)
+
+    sorted_weeks = sorted(progress_data.keys())
+    user_lines = {
+        member.username: [
+            round(progress_data[week].get(member.id, 0.0), 2)
+            for week in sorted_weeks
+        ] for member in group.members
+    }
+
+    # ✅ Final weekly stats dict
     group_weekly_stats = {
         "total_distance": round(group_distance, 2),
         "total_runs": group_run_count,
@@ -729,7 +769,19 @@ def view_group(group_id):
         "most_active_day": most_active_day,
         "fastest_run": fastest_run,
         "longest_run": longest_run,
-        "user_stats": user_weekly_stats
+        "user_stats": user_weekly_stats,
+        "distance_chart": {
+            "labels": [user.username for user in group.members],
+            "data": [user_weekly_stats.get(user.id, {}).get("distance", 0) for user in group.members]
+        },
+        "daily_chart": {
+            "labels": day_labels,
+            "data": [round(distance_by_day[d], 2) for d in day_labels]
+        },
+        "progress_chart": {
+            "labels": sorted_weeks,
+            "series": user_lines
+        }
     }
 
     return render_template(
@@ -742,7 +794,6 @@ def view_group(group_id):
         user_runs_paginated=user_runs_paginated,
         group_weekly_stats=group_weekly_stats
     )
-
 
 
 
