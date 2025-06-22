@@ -27,7 +27,7 @@ from app.utils.token import generate_group_invite_token, verify_group_invite_tok
 
 from app.email import (
     send_verification_email, send_group_invite_email, send_password_reset_email,
-    send_contact_email, send_admin_registration_alert
+    send_contact_email, send_admin_registration_alert, send_group_activity_notification_email
 )
 from app.utils.token import generate_group_invite_token
 
@@ -42,8 +42,6 @@ from collections import Counter, defaultdict
 import random
 
 from calendar import month_abbr
-
-
 
 
 @app.route('/')
@@ -476,50 +474,57 @@ def dashboard():
         stats=stats
     )
 
-@app.route('/log_activity', methods=['POST'])
+@app.route('/log', methods=['POST'])
 @login_required
 def log_activity():
-    form = LogActivityForm()
-    form.groups.choices = [(g.id, g.name) for g in current_user.groups]
+    date_str = request.form.get('date')
+    distance = request.form.get('distance')
+    time = request.form.get('time')
+    pace = request.form.get('pace')
 
-    if form.validate_on_submit():
-        raw_distance = form.distance.data
-        distance = float(raw_distance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+    print("🛠 form data:", dict(request.form))
 
-        total_seconds = (form.hours.data or 0) * 3600 + (form.minutes.data or 0) * 60
+    try:
+        date = datetime.strptime(request.form.get("date"), "%Y-%m-%d").date()
+        distance = float(request.form.get("distance"))
+        hours = int(request.form.get("hours") or 0)
+        minutes = int(request.form.get("minutes") or 0)
+        total_minutes = hours * 60 + minutes
+        time = total_minutes * 60  # convert to seconds
+        pace = int(time / distance)
 
-        if total_seconds == 0 or distance <= 0:
-            flash("Time and distance must be greater than zero.", "danger")
-            session["open_activity_modal"] = True
-            return redirect(url_for('dashboard'))
+    except (ValueError, TypeError) as e:
+        print("❌ Input error:", e)
+        flash("Invalid input. Please check your values.", "danger")
+        return redirect(url_for("dashboard"))
 
-        pace = total_seconds / distance
+    run = Run(user_id=current_user.id, date=date, distance=distance, time=time, pace=pace)
 
-        run = Run(
-            user_id=current_user.id,
-            date=form.date.data,
-            distance=distance,
-            time=total_seconds,
-            pace=pace
-        )
+    # Handle group association
+    group_values = request.form.getlist('groups')
+    if not group_values:
+        group_value = request.form.get('groups')
+        if group_value:
+            group_values = [group_value]
 
-        selected_group_ids = [int(gid) for gid in request.form.getlist('groups')]
-        if selected_group_ids:
-            run.groups = db.session.scalars(
-                sa.select(Group).where(Group.id.in_(selected_group_ids))
-            ).all()
+    selected_group_ids = [int(gid) for gid in group_values if gid]
 
-        db.session.add(run)
-        db.session.flush()  # ensures run.id is populated
+    db.session.add(run)
+    db.session.flush()  # Get run.id before commit
 
-        db.session.commit()
-        flash("Activity logged successfully!", "success")
-        session.pop("open_activity_modal", None)
-        return redirect(request.referrer or url_for('my_activities'))
+    for group_id in selected_group_ids:
+        group = db.session.get(Group, group_id)
+        if group and current_user in group.members:
+            run.groups.append(group)
 
-    flash("There was an error logging your activity.", "danger")
-    session["open_activity_modal"] = True
-    return redirect(url_for('dashboard'))
+    db.session.commit()
+    flash("Run logged successfully!", "success")
+
+    # Optional: redirect back to group if provided
+    group_id = request.form.get('group_id')
+    if group_id:
+        return redirect(url_for('view_group', group_id=group_id))
+    return redirect(url_for("dashboard"))
 
 @app.route('/edit_run/<int:run_id>', methods=['POST'])
 @login_required
@@ -814,7 +819,8 @@ def view_group(group_id):
         top_runs=top_runs,
         top_pace=top_pace,
         user_runs_paginated=user_runs_paginated,
-        group_weekly_stats=group_weekly_stats
+        group_weekly_stats=group_weekly_stats,
+        current_date=datetime.utcnow().strftime('%Y-%m-%d')
     )
 
 
@@ -1455,3 +1461,23 @@ def public_profile(username):
         fastest_pace=fastest_pace,
         longest_run=longest_run,
     )
+
+def notify_group_members(run, group_ids):
+    # Collect all users in the groups (excluding the runner)
+    group_members = db.session.execute(
+        sa.select(User)
+        .join(user_groups)
+        .where(
+            user_groups.c.group_id.in_(group_ids),
+            User.id != run.user_id,
+            User.notify_group_activity == True
+        )
+    ).scalars().all()
+
+    runner = db.session.get(User, run.user_id)
+    groups = db.session.scalars(
+        sa.select(Group).where(Group.id.in_(group_ids))
+    ).all()
+
+    for member in group_members:
+        send_group_activity_notification_email(member, runner, run, groups)

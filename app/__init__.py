@@ -24,5 +24,4 @@ login.login_message = "Please log in to access this page."
 login.login_message_category = "warning"
 mail.init_app(app)
 
-# Import routes and models AFTER initializing extensions
 from app import routes, models

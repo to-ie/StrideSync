@@ -159,8 +159,41 @@
       </div>
     </div>
 
+    
+
+
     <!-- Members Sidebar -->
     <div class="col-md-4">
+
+      <!-- Add Activity Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header">
+          <strong>Log an activity to this group</strong>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('log_activity') }}">
+            <input type="hidden" name="groups" value="{{ group.id }}">
+            <input type="hidden" name="group_id" value="{{ group.id }}">
+            <div class="mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required value="{{ current_date }}">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Distance (km)</label>
+              <input type="number" name="distance" class="form-control" step="0.01" min="0" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Time</label>
+              <div class="d-flex gap-2">
+                <input type="number" name="hours" class="form-control" min="0" placeholder="Hours">
+                <input type="number" name="minutes" class="form-control" min="0" placeholder="Minutes">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-dark">Add Run</button>
+          </form>
+        </div>
+      </div>
+      
       <div class="card shadow-sm members-card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>Members</strong>

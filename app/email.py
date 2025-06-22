@@ -4,6 +4,9 @@ from app import mail
 from app.utils.token import generate_group_invite_token
 
 
+from flask import current_app
+
+
 def send_verification_email(user):
     token = user.verification_token
     verify_url = url_for('verify_email', token=token, _external=True)
@@ -220,4 +223,48 @@ Traceback:
 {traceback_str}
 """
     msg.html = html
+    mail.send(msg)
+
+def send_group_activity_notification_email(recipient, runner, run, groups):
+    subject = f"{runner.username} logged a new run"
+    recipient_email = recipient.email
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    username = recipient.username or "there"
+
+    # Format group names
+    group_list = ', '.join(f"<strong>{g.name}</strong>" for g in groups)
+    group_text = ', '.join(g.name for g in groups)
+
+    # Link to the first group (assumes user is in it)
+    first_group_url = url_for("view_group", group_id=groups[0].id, _external=True)
+    first_group_name = groups[0].name
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient_email])
+
+    # Plain text fallback
+    msg.body = f"""Hi {username},
+
+{runner.username} just logged a new run in your group(s): {group_text}
+
+You can view it here:
+{first_group_url}
+
+To stop these notifications, update your preferences in your account settings."""
+
+    # HTML version with subtle footer note
+    html_body = (
+        f"{runner.username} just logged a new run in your group{'s' if len(groups) > 1 else ''}: {group_list}."
+        f"<br><br>"
+        f"<small style='color: #888;'>You can turn off these notifications in your "
+        f"<a href='{url_for('my_account', _external=True)}' style='color: #888;'>account settings</a>.</small>"
+    )
+
+    msg.html = _build_email_html(
+        title="New Group Run Logged",
+        greeting=f"Hi {username},",
+        body=html_body,
+        action_url=first_group_url,
+        action_label=f"View {first_group_name} group"
+    )
+
     mail.send(msg)
