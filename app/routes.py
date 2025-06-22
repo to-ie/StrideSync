@@ -477,10 +477,7 @@ def dashboard():
 @app.route('/log', methods=['POST'])
 @login_required
 def log_activity():
-    date_str = request.form.get('date')
-    distance = request.form.get('distance')
-    time = request.form.get('time')
-    pace = request.form.get('pace')
+    from app.email import send_group_activity_notification_email
 
     print("🛠 form data:", dict(request.form))
 
@@ -492,7 +489,6 @@ def log_activity():
         total_minutes = hours * 60 + minutes
         time = total_minutes * 60  # convert to seconds
         pace = int(time / distance)
-
     except (ValueError, TypeError) as e:
         print("❌ Input error:", e)
         flash("Invalid input. Please check your values.", "danger")
@@ -501,26 +497,34 @@ def log_activity():
     run = Run(user_id=current_user.id, date=date, distance=distance, time=time, pace=pace)
 
     # Handle group association
-    group_values = request.form.getlist('groups')
-    if not group_values:
-        group_value = request.form.get('groups')
-        if group_value:
-            group_values = [group_value]
-
+    group_values = request.form.getlist('groups') or [request.form.get('groups')]
     selected_group_ids = [int(gid) for gid in group_values if gid]
+    selected_groups = []
 
     db.session.add(run)
-    db.session.flush()  # Get run.id before commit
+    db.session.flush()  # to get run.id
 
     for group_id in selected_group_ids:
         group = db.session.get(Group, group_id)
         if group and current_user in group.members:
             run.groups.append(group)
+            selected_groups.append(group)
 
     db.session.commit()
+
+    # Send notification to other group members (excluding current_user)
+    for group in selected_groups:
+        for member in group.members:
+            if member.id != current_user.id:
+                send_group_activity_notification_email(
+                    recipient=member,
+                    runner=current_user,
+                    run=run,
+                    groups=[group]
+                )
+
     flash("Run logged successfully!", "success")
 
-    # Optional: redirect back to group if provided
     group_id = request.form.get('group_id')
     if group_id:
         return redirect(url_for('view_group', group_id=group_id))
