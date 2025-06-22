@@ -19,6 +19,11 @@
     </div>
 
     <div class="mb-3">
+      <label for="captcha" class="form-label">CAPTCHA: {{ captcha_question }}</label>
+      <input type="text" class="form-control" id="captcha" name="captcha" required>
+    </div>
+
+    <div class="mb-3">
       <label for="message" class="form-label">Your Message</label>
       <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
     </div>

@@ -39,6 +39,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from collections import Counter, defaultdict
 
+import random
+
 
 @app.route('/')
 @app.route('/index')
@@ -1234,9 +1236,15 @@ def contact():
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
         message_body = request.form.get('message', '').strip()
+        captcha_answer = request.form.get('captcha', '').strip()
+        expected_answer = session.pop('captcha_answer', None)
 
         if not name or not email or not message_body:
             flash('Please fill in all fields.', 'danger')
+            return redirect(url_for('contact'))
+
+        if expected_answer is None or captcha_answer != expected_answer:
+            flash('Incorrect CAPTCHA. Please try again.', 'danger')
             return redirect(url_for('contact'))
 
         try:
@@ -1247,5 +1255,12 @@ def contact():
 
         return redirect(url_for('contact'))
 
-    return render_template('contact.html')
+    # Generate CAPTCHA
+    num1 = random.randint(1, 9)
+    num2 = random.randint(1, 9)
+    operator = random.choice(['+', '-'])
+    answer = str(eval(f"{num1}{operator}{num2}"))
+    session['captcha_answer'] = answer
+    captcha_question = f"What is {num1} {operator} {num2}?"
 
+    return render_template('contact.html', captcha_question=captcha_question)
