@@ -127,7 +127,7 @@ def _build_email_html(title, greeting, body, action_url, action_label):
 
 def send_contact_email(name, email, message_text):
     subject = f"New Contact Form Submission from {name}"
-    recipient = current_app.config.get('SUPPORT_EMAIL', 'support@stridesync.com')
+    recipient = current_app.config.get('SUPPORT_EMAIL', 'toie@pm.me')
     sender = current_app.config['MAIL_DEFAULT_SENDER']
 
     msg = Message(subject=subject, sender=sender, recipients=[recipient])
