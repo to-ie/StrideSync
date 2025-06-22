@@ -148,6 +148,12 @@
     <!-- Recent Activity -->
     <div class="mb-5">
       <h5>Your recent activity</h5>
+      <div class="text-end mb-3">
+        <a href="{{ url_for('my_activities') }}" class="btn btn-soft btn-sm"">
+          See all activity
+        </a>
+      </div>
+      
       {% if recent_runs %}
         <div class="list-group shadow-sm">
           {% for run in recent_runs %}
