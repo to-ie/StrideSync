@@ -10,6 +10,7 @@
       Great to see you back on StrideSync.
     </p>
 
+
     <!-- invites -->
     {% if pending_invites %}
       <div class="mb-5">
@@ -427,6 +428,7 @@
           label: 'Distance (km)',
           data: distanceData,
           borderColor: '#007bff',
+          fill: true, 
           backgroundColor: 'rgba(0, 123, 255, 0.2)',
           yAxisID: 'y',
           tension: 0.3,
@@ -435,6 +437,7 @@
           label: 'Pace (min/km)',
           data: paceData,
           borderColor: '#dc3545',
+          fill: true,
           backgroundColor: 'rgba(220, 53, 69, 0.2)',
           yAxisID: 'y1',
           tension: 0.3,

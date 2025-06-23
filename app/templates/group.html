@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", function () {
         {
           label: "{{ username }}",
           data: {{ values | tojson }},
-          fill: false,
+          fill: true,
           borderColor: "#" + Math.floor(Math.random()*16777215).toString(16),
           tension: 0.3
         },
