@@ -897,7 +897,6 @@ def invite_to_group(group_id):
 
     send_group_invite_email(email, group)
     return jsonify({"success": True, "message": f"Invitation sent to {email}."})
-
 @app.route('/groups/invite/accept/<token>', methods=['GET', 'POST'])
 @login_required
 def accept_group_invite(token):
@@ -908,6 +907,11 @@ def accept_group_invite(token):
     if not invite:
         flash("This invitation is invalid or has expired.", "danger")
         return redirect(url_for("dashboard"))
+
+    # Email mismatch check
+    if invite.email.lower() != current_user.email.lower():
+        flash("This invite was sent to a different email address!", "warning")
+        return redirect(url_for('dashboard', _anchor='invite-status'))
 
     group = invite.group
 
@@ -924,8 +928,6 @@ def accept_group_invite(token):
         send_invite_accepted_email(invite.inviter, current_user, group)
 
     return redirect(url_for("view_group", group_id=group.id))
-
-
 
 @app.route('/groups/invite/reject/<token>', methods=['POST'])
 @login_required
