@@ -402,3 +402,12 @@ footer {
 .bg-white {
   background-color: #ffffff !important;
 }
+
+
+.username-truncate {
+  max-width: 100px; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
