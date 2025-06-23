@@ -3,8 +3,10 @@ from flask_mail import Message
 from app import mail
 from app.utils.token import generate_group_invite_token
 
-
+from app import db
+import sqlalchemy as sa
 from flask import current_app
+from sqlalchemy import func
 
 
 def send_verification_email(user):
@@ -65,37 +67,6 @@ If you didn’t request this, you can ignore this email."""
         body="We received a request to reset your password. Click the button below to choose a new one.",
         action_url=reset_url,
         action_label="Reset Password"
-    )
-
-    mail.send(msg)
-
-
-def send_group_invite_email(email, group):
-    token = generate_group_invite_token(email, group.id)
-    invite_url = url_for('register', _external=True) + f"?invite_token={token}&group_id={group.id}"
-
-    subject = f"You're invited to join '{group.name}' on StrideSync"
-    sender = current_app.config['MAIL_DEFAULT_SENDER']
-
-    msg = Message(subject=subject, sender=sender, recipients=[email])
-
-    msg.body = f"""Hi there,
-
-You've been invited to join the group '{group.name}' on StrideSync.
-
-Click the link below to sign up and join the group:
-
-{invite_url}
-
-If you weren't expecting this, you can ignore this email.
-"""
-
-    msg.html = _build_email_html(
-        title="You're Invited to Join a Group",
-        greeting="Hi there,",
-        body=f"You've been invited to join the group <strong>{group.name}</strong> on StrideSync.",
-        action_url=invite_url,
-        action_label="Join the Group"
     )
 
     mail.send(msg)
@@ -265,6 +236,67 @@ To stop these notifications, update your preferences in your account settings.""
         body=html_body,
         action_url=first_group_url,
         action_label=f"View {first_group_name} group"
+    )
+
+    mail.send(msg)
+
+def send_group_invite_email(email, group):
+    from app.models import User
+    token = generate_group_invite_token(email, group.id)
+
+    existing_user = db.session.scalar(
+        sa.select(User).where(func.lower(User.email) == email.lower())
+    )
+    if existing_user:
+        invite_url = url_for('accept_group_invite', token=token, _external=True)
+    else:
+        invite_url = url_for('register', _external=True) + f"?invite_token={token}&group_id={group.id}"
+
+    subject = f"You're invited to join '{group.name}' on StrideSync"
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    msg = Message(subject=subject, sender=sender, recipients=[email])
+
+    msg.body = f"""Hi there,
+
+You've been invited to join the group '{group.name}' on StrideSync.
+
+Click the link below to join:
+
+{invite_url}
+
+If you weren't expecting this, you can ignore this email.
+"""
+    msg.html = _build_email_html(
+        title="You're Invited to Join a Group",
+        greeting="Hi there,",
+        body=f"You've been invited to join the group <strong>{group.name}</strong> on StrideSync.",
+        action_url=invite_url,
+        action_label="Join the Group"
+    )
+
+    mail.send(msg)
+
+def send_invite_accepted_email(inviter, new_user, group):
+    subject = f"{new_user.username} accepted your invite to '{group.name}'"
+    sender = current_app.config['MAIL_DEFAULT_SENDER']
+    recipient = inviter.email
+
+    msg = Message(subject=subject, sender=sender, recipients=[recipient])
+
+    msg.body = f"""Hi {inviter.username},
+
+{new_user.username} has accepted your invitation and joined the group '{group.name}'.
+
+You can view the group here:
+{url_for('view_group', group_id=group.id, _external=True)}
+"""
+
+    msg.html = _build_email_html(
+        title="Invitation Accepted",
+        greeting=f"Hi {inviter.username},",
+        body=f"<strong>{new_user.username}</strong> just accepted your invitation and joined the group <strong>{group.name}</strong>.",
+        action_url=url_for('view_group', group_id=group.id, _external=True),
+        action_label="View Group"
     )
 
     mail.send(msg)

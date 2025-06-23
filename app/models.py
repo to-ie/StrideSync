@@ -120,6 +120,13 @@ class GroupInvite(db.Model):
     token = sa.Column(sa.String(128), nullable=False, unique=True)
     group_id = sa.Column(sa.Integer, sa.ForeignKey('groups.id'), nullable=False)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    inviter_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', name='fk_group_invite_inviter_id_users'),
+        nullable=True
+    )
+    inviter = db.relationship('User', backref='sent_invites', foreign_keys=[inviter_id])
+
 
     group = so.relationship("Group", back_populates="invites")
 

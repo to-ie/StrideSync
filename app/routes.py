@@ -27,8 +27,10 @@ from app.utils.token import generate_group_invite_token, verify_group_invite_tok
 
 from app.email import (
     send_verification_email, send_group_invite_email, send_password_reset_email,
-    send_contact_email, send_admin_registration_alert, send_group_activity_notification_email
+    send_contact_email, send_admin_registration_alert, send_group_activity_notification_email,
+    send_invite_accepted_email
 )
+
 from app.utils.token import generate_group_invite_token
 
 import secrets
@@ -41,7 +43,8 @@ from collections import Counter, defaultdict
 
 import random
 
-
+from flask_wtf import FlaskForm
+from wtforms import SubmitField
 
 
 @app.route('/')
@@ -99,7 +102,18 @@ def logout():
 def register():
     invite_token = request.args.get('invite_token')
 
-    # Handle invite token before form submission
+    # If user is logged in and invite token is present
+    if current_user.is_authenticated:
+        if invite_token:
+            data = verify_group_invite_token(invite_token)
+            if data:
+                token_email = data.get("email", "").lower()
+                if token_email != current_user.email.lower():
+                    flash("This invite was sent to a different email address!", "warning")
+                return redirect(url_for("dashboard"))
+        return redirect(url_for("index"))
+
+    # If not logged in and invite token is valid, store in session
     if invite_token:
         data = verify_group_invite_token(invite_token)
         if data:
@@ -241,6 +255,11 @@ def dashboard():
     ).all()
 
     sorted_groups = sorted(current_user.groups, key=lambda g: g.id, reverse=True)
+
+    # Get pending group invites for current user
+    pending_invites = db.session.scalars(
+        sa.select(GroupInvite).where(GroupInvite.email == current_user.email)
+    ).all()
 
     # Prepare stats variables
     if runs:
@@ -458,6 +477,8 @@ def dashboard():
         "pace": pace_data
     }
 
+    dummy_form = DummyForm()
+
     return render_template(
         "dashboard.html",
         user=current_user,
@@ -471,7 +492,9 @@ def dashboard():
         create_group_form=create_group_form,
         sorted_groups=sorted_groups,
         progress_charts=progress_charts,
-        stats=stats
+        stats=stats,
+        pending_invites=pending_invites,
+        dummy_form=dummy_form,
     )
 
 @app.route('/log', methods=['POST'])
@@ -538,7 +561,6 @@ def notify_group_members(run, group_ids):
 
     for member in group_members:
         send_group_activity_notification_email(member, runner, run, groups)
-
 
 @app.route('/edit_run/<int:run_id>', methods=['POST'])
 @login_required
@@ -837,7 +859,6 @@ def view_group(group_id):
         current_date=datetime.utcnow().strftime('%Y-%m-%d')
     )
 
-
 @app.route('/groups/<int:group_id>/invite', methods=['POST'])
 @login_required
 def invite_to_group(group_id):
@@ -850,39 +871,76 @@ def invite_to_group(group_id):
     if not email:
         return jsonify({"success": False, "message": "Email is required"}), 400
 
-    # Check if user already exists
     existing_user = db.session.scalar(sa.select(User).where(User.email == email))
-    if existing_user:
-        if existing_user in group.members:
-            return jsonify({"success": False, "message": "User is already in the group"}), 409
-        group.members.append(existing_user)
-        db.session.commit()
-        return jsonify({"success": True, "message": f"{existing_user.username} added to the group."})
+    if existing_user and existing_user in group.members:
+        return jsonify({"success": False, "message": "User is already in the group"}), 409
 
-    # Check if invite already exists
     existing_invite = db.session.scalar(
         sa.select(GroupInvite).where(
-            sa.and_(
-                GroupInvite.email == email,
-                GroupInvite.group_id == group.id
-            )
+            GroupInvite.email == email,
+            GroupInvite.group_id == group.id
         )
     )
     if existing_invite:
         return jsonify({"success": False, "message": "Invite already sent."}), 409
 
-    # Create invite and send email
-    try:
-        token = generate_group_invite_token(email=email, group_id=group.id)
-        invite = GroupInvite(email=email, group_id=group.id, token=token)
-        db.session.add(invite)
-        db.session.commit()
+    # Create invite
+    token = generate_group_invite_token(email=email, group_id=group.id)
+    invite = GroupInvite(
+        email=email,
+        group_id=group.id,
+        token=token,
+        inviter_id=current_user.id  # ← Add this line
+    )
+    db.session.add(invite)
+    db.session.commit()
 
-        send_group_invite_email(email, group)
-    except Exception as e:
-        return jsonify({"success": False, "message": "Failed to send email."}), 500
-
+    send_group_invite_email(email, group)
     return jsonify({"success": True, "message": f"Invitation sent to {email}."})
+
+@app.route('/groups/invite/accept/<token>', methods=['GET', 'POST'])
+@login_required
+def accept_group_invite(token):
+    invite = db.session.scalar(
+        sa.select(GroupInvite).where(GroupInvite.token == token)
+    )
+
+    if not invite:
+        flash("This invitation is invalid or has expired.", "danger")
+        return redirect(url_for("dashboard"))
+
+    group = invite.group
+
+    if group not in current_user.groups:
+        group.members.append(current_user)
+        db.session.delete(invite)
+        db.session.commit()
+        flash(f"You've joined {group.name}.", "success")
+    else:
+        flash("You're already in this group.", "info")
+
+    # Notify the inviter
+    if invite.inviter:
+        send_invite_accepted_email(invite.inviter, current_user, group)
+
+    return redirect(url_for("view_group", group_id=group.id))
+
+
+
+@app.route('/groups/invite/reject/<token>', methods=['POST'])
+@login_required
+def reject_group_invite(token):
+    invite = db.session.scalar(
+        sa.select(GroupInvite).where(GroupInvite.token == token)
+    )
+    if not invite or invite.email != current_user.email:
+        flash("Invalid or expired invite.", "danger")
+    else:
+        db.session.delete(invite)
+        db.session.commit()
+        flash("You’ve declined the group invite.", "info")
+
+    return redirect(url_for("my_groups"))
 
 @app.route('/groups/<int:group_id>/delete', methods=['POST'])
 @login_required
@@ -1008,16 +1066,25 @@ def my_activities():
         user=current_user
     )
 
+class DummyForm(FlaskForm):
+    submit = SubmitField("Submit")
+
 @app.route('/my-groups')
 @login_required
 def my_groups():
     sorted_groups = sorted(current_user.groups, key=lambda g: g.id, reverse=True)
+    pending_invites = db.session.scalars(
+        sa.select(GroupInvite).where(GroupInvite.email == current_user.email)
+    ).all()
     create_group_form = CreateGroupForm()
+    dummy_form = DummyForm()
+
     return render_template(
         "my_groups.html",
         groups=sorted_groups,
+        pending_invites=pending_invites,
         create_group_form=create_group_form,
-        user=current_user
+        dummy_form=dummy_form
     )
 
 @app.route('/groups/<int:group_id>/edit', methods=['POST'])

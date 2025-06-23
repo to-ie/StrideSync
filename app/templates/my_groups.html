@@ -5,12 +5,47 @@
     <h1 class="display-4 fw-bold mb-4 hero-title">My <span>Groups</span></h1>
     <p class="lead text-muted">Create or explore groups you're in.</p>
 
+
+    <!-- invites -->
+    {% if pending_invites %}
+      <div class="mb-5">
+        {% for invite in pending_invites %}
+          <div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 shadow-sm border border-primary">
+            <div class="flex-grow-1">
+              <h6 class="mb-1" style="margin-top: 7px;">
+                You've been invited to join <strong>{{ invite.group.name }}</strong>
+              </h6>
+              <p class="mb-2 small text-muted">
+                {{ invite.group.description[:100] }}{% if invite.group.description|length > 100 %}...{% endif %}
+              </p>
+            </div>
+            <div class="d-flex gap-2 flex-shrink-0">
+              <form method="POST" action="{{ url_for('accept_group_invite', token=invite.token) }}">
+                {{ dummy_form.hidden_tag() }}
+                <button type="submit" class="btn btn-sm btn-success">
+                  <i class="bi bi-check-circle me-1"></i> Join Group
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('reject_group_invite', token=invite.token) }}">
+                {{ dummy_form.hidden_tag() }}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-x-circle me-1"></i> Decline
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+
     <!-- Create Group Button -->
     <div class="d-flex justify-content-end mb-4">
       <button class="btn btn-soft btn-sm" data-bs-toggle="modal" data-bs-target="#createGroupModal">
         <i class="bi bi-plus-lg"></i> Create Group
       </button>
     </div>
+
 
     {% if groups %}
     <div class="row g-3">
