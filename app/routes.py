@@ -41,7 +41,7 @@ from collections import Counter, defaultdict
 
 import random
 
-from calendar import month_abbr
+
 
 
 @app.route('/')
@@ -477,7 +477,6 @@ def dashboard():
 @app.route('/log', methods=['POST'])
 @login_required
 def log_activity():
-    from app.email import send_group_activity_notification_email
 
     print("🛠 form data:", dict(request.form))
 
@@ -490,7 +489,6 @@ def log_activity():
         time = total_minutes * 60  # convert to seconds
         pace = int(time / distance)
     except (ValueError, TypeError) as e:
-        print("❌ Input error:", e)
         flash("Invalid input. Please check your values.", "danger")
         return redirect(url_for("dashboard"))
 
@@ -512,16 +510,8 @@ def log_activity():
 
     db.session.commit()
 
-    # Send notification to other group members (excluding current_user)
-    for group in selected_groups:
-        for member in group.members:
-            if member.id != current_user.id:
-                send_group_activity_notification_email(
-                    recipient=member,
-                    runner=current_user,
-                    run=run,
-                    groups=[group]
-                )
+    # ✅ Send notification to group members who have notify_group_activity == True
+    notify_group_members(run, [g.id for g in selected_groups])
 
     flash("Run logged successfully!", "success")
 
@@ -529,6 +519,26 @@ def log_activity():
     if group_id:
         return redirect(url_for('view_group', group_id=group_id))
     return redirect(url_for("dashboard"))
+
+def notify_group_members(run, group_ids):
+    group_members = db.session.execute(
+        sa.select(User)
+        .join(user_groups)
+        .where(
+            user_groups.c.group_id.in_(group_ids),
+            User.id != run.user_id,
+            User.notify_group_activity == True
+        )
+    ).scalars().all()
+
+    runner = db.session.get(User, run.user_id)
+    groups = db.session.scalars(
+        sa.select(Group).where(Group.id.in_(group_ids))
+    ).all()
+
+    for member in group_members:
+        send_group_activity_notification_email(member, runner, run, groups)
+
 
 @app.route('/edit_run/<int:run_id>', methods=['POST'])
 @login_required
