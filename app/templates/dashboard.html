@@ -178,7 +178,9 @@
     <!-- 📈 Progress Over Time Chart -->
     <div class="card  p-3 mt-4 mb-4">
       <h5 class="fw-bold mb-3">📈 Progress over time</h5>
-      <canvas id="progressChart" height="400px"></canvas>
+      <div class="progress-chart-container">
+        <canvas id="progressChart"></canvas>
+      </div>
     </div>
 
     <div class="my-2"><br></div>
@@ -447,6 +449,7 @@
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,  
       interaction: {
         mode: 'index',
         intersect: false,
