@@ -178,7 +178,7 @@
     <!-- 📈 Progress Over Time Chart -->
     <div class="card  p-3 mt-4 mb-4">
       <h5 class="fw-bold mb-3">📈 Progress over time</h5>
-      <div class="progress-chart-container">
+      <div class="progress-chart-container" style="overflow-x: auto;">
         <canvas id="progressChart"></canvas>
       </div>
     </div>
@@ -414,12 +414,15 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script>
   const ctx = document.getElementById('progressChart').getContext('2d');
 
   const distanceData = {{ progress_charts.distance|tojson }};
   const rawPaceData = {{ progress_charts.pace|tojson }};
   const paceData = rawPaceData.map(p => p === null ? null : Number(p));
+  const labels = {{ progress_charts.labels|tojson }};
+  const latestStartIndex = Math.max(labels.length - 12, 0);
 
   const progressChart = new Chart(ctx, {
     type: 'line',
@@ -456,6 +459,15 @@
       },
       stacked: false,
       scales: {
+        x: {
+          type: 'category',
+          min: labels[latestStartIndex],
+          max: labels[labels.length - 1],
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        },
         y: {
           type: 'linear',
           position: 'left',
@@ -487,6 +499,22 @@
         }
       },
       plugins: {
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'x',
+            threshold: 10
+          },
+          zoom: {
+            wheel: {
+              enabled: true
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'x',
+          }
+        },
         tooltip: {
           callbacks: {
             label: function(context) {
@@ -504,6 +532,10 @@
       }
     }
   });
+
+
+
+  
 </script>
 
 {% endblock %}
