@@ -7,18 +7,22 @@ from flask_login import (
 )
 
 import sqlalchemy as sa
+
 from sqlalchemy import select, func, and_, desc
+from urllib.parse import urlsplit
+from datetime import datetime, timedelta
+from calendar import month_abbr
 
 from app import app, db
 from app.forms import (
     LoginForm, RegisterForm, LogActivityForm,
-    EditRunForm, DeleteRunForm, CreateGroupForm, 
-    RequestResetForm, ResetPasswordForm, AccountForm
+    EditRunForm, DeleteRunForm, CreateGroupForm, RequestResetForm, ResetPasswordForm
 )
 from app.models import (
     User, UserRole, Run, Group,
     GroupInvite, user_groups, run_groups
 )
+
 from app.utils.token import generate_group_invite_token, verify_group_invite_token
 
 from app.email import (
@@ -27,16 +31,20 @@ from app.email import (
     send_invite_accepted_email
 )
 
-from decimal import Decimal, ROUND_HALF_UP
-from collections import Counter, defaultdict
-import random
+from app.utils.token import generate_group_invite_token
+
 import secrets
-from urllib.parse import urlsplit
-from datetime import datetime, timedelta
-from calendar import month_abbr
+
+from app.forms import AccountForm
+
+from decimal import Decimal, ROUND_HALF_UP
+
+from collections import Counter, defaultdict
+
+import random
+
 from flask_wtf import FlaskForm
 from wtforms import SubmitField
-
 
 
 @app.route('/')
