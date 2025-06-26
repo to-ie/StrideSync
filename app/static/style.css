@@ -423,3 +423,9 @@ footer {
     height: 150px;
   }
 }
+
+
+.form-check-input:checked {
+  background-color: #f33e78;
+  border-color: #f33e78;
+}
