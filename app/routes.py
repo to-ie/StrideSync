@@ -492,6 +492,7 @@ def dashboard():
 @app.route('/log', methods=['POST'])
 @login_required
 def log_activity():
+
     print("🛠 form data:", dict(request.form))
 
     try:
@@ -504,7 +505,7 @@ def log_activity():
         pace = int(time / distance)
     except (ValueError, TypeError) as e:
         flash("Invalid input. Please check your values.", "danger")
-        return redirect(request.referrer or url_for("dashboard"))  # Go back to the previous page or dashboard
+        return redirect(url_for("dashboard"))
 
     run = Run(user_id=current_user.id, date=date, distance=distance, time=time, pace=pace)
 
@@ -532,9 +533,7 @@ def log_activity():
     group_id = request.form.get('group_id')
     if group_id:
         return redirect(url_for('view_group', group_id=group_id))
-
-    # Redirect back to the page the user came from, or fallback to dashboard
-    return redirect(request.referrer or url_for("dashboard"))
+    return redirect(url_for("dashboard"))
 
 def notify_group_members(run, group_ids):
     group_members = db.session.execute(
