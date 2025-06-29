@@ -336,7 +336,7 @@
         <div class="modal-body">
           <div class="mb-3">
             {{ form.date.label }}
-            {{ form.date(class="form-control") }}
+            {{ form.date(class="form-control", id="activityDate") }}
           </div>
           <div class="mb-3">
             {{ form.distance.label }}
@@ -357,7 +357,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-dark">Save Activity</button>
+          <button type="submit" class="btn btn-dark" id="logActivityBtn">Save Activity</button>
+          <div id="logActivityStatus" class="mt-2 text-muted small d-none">Hold on, we're logging your activity.</div>
+
         </div>
       </div>
     </form>
@@ -532,10 +534,41 @@
       }
     }
   });
-
-
-
   
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const logForm = document.querySelector('#logActivityModal form');
+    const logBtn = document.getElementById('logActivityBtn');
+    const logStatus = document.getElementById('logActivityStatus');
+
+    if (logForm && logBtn && logStatus) {
+      logForm.addEventListener('submit', function () {
+        logBtn.disabled = true;
+        logBtn.innerText = 'Logging...';
+        logStatus.classList.remove('d-none');
+      });
+    }
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Set today's date in the date input when the modal opens
+    const modal = document.getElementById('logActivityModal');
+    const dateInput = document.getElementById('activityDate');
+
+    if (modal && dateInput) {
+      modal.addEventListener('shown.bs.modal', function () {
+        if (!dateInput.value) {
+          const today = new Date().toISOString().split('T')[0];
+          dateInput.value = today;
+        }
+      });
+    }
+  });
+</script>
+
+
 
 {% endblock %}

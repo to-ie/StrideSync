@@ -126,50 +126,47 @@
       </div>
 
       <!-- members activity -->
-    <h4 class="mt-5">Member Activity</h4>
+          <h4>Member Activity</h4>
+          <!-- Scrollable Tabs with Fade Hint -->
+          <div class="position-relative mb-0">
 
-    <!-- Scrollable Tabs with Fade Hint -->
-    <div class="position-relative mb-0">
+            <!-- Fade effects -->
+            <div class="fade-left"></div>
+            <div class="fade-right"></div>
 
-      <!-- Fade effects -->
-      <div class="fade-left"></div>
-      <div class="fade-right"></div>
+            <!-- Horizontal scroll container -->
+            <div id="scrollableTabs"
+                class="d-flex overflow-auto px-2"
+                style="scrollbar-width: none; -ms-overflow-style: none;">
+              <ul class="nav nav-tabs flex-nowrap border-bottom-0"
+                  id="memberTabs" role="tablist"
+                  style="flex: 0 0 auto; white-space: nowrap;">
+                {% for member in group.members %}
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if member.id == current_user.id %}active{% endif %}"
+                      id="tab-{{ member.id }}" data-bs-toggle="tab"
+                      data-bs-target="#user-{{ member.id }}" type="button" role="tab">
+                      {{ member.username }}
+                    </button>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
 
-      <!-- Horizontal scroll container -->
-      <div id="scrollableTabs"
-          class="d-flex overflow-auto px-2"
-          style="scrollbar-width: none; -ms-overflow-style: none;">
-        <ul class="nav nav-tabs flex-nowrap border-bottom-0"
-            id="memberTabs" role="tablist"
-            style="flex: 0 0 auto; white-space: nowrap;">
-          {% for member in group.members %}
-            <li class="nav-item" role="presentation">
-              <button class="nav-link {% if member.id == current_user.id %}active{% endif %}"
-                id="tab-{{ member.id }}" data-bs-toggle="tab"
-                data-bs-target="#user-{{ member.id }}" type="button" role="tab">
-                {{ member.username }}
-              </button>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
+          <!-- Content panel -->
+          <div class="tab-content border-top border p-3 bg-white shadow-sm" id="memberTabsContent">
+            {% for member in group.members %}
+              <div class="tab-pane fade {% if member.id == current_user.id %}show active{% endif %}"
+                id="user-{{ member.id }}" role="tabpanel" data-user-id="{{ member.id }}">
+                <div class="run-list">Loading...</div>
+              </div>
+            {% endfor %}
+          </div>
+      
+      <div class="mb-4"></div>
     </div>
-
-    <!-- Content panel -->
-    <div class="tab-content border-top border p-3 bg-white shadow-sm" id="memberTabsContent">
-      {% for member in group.members %}
-        <div class="tab-pane fade {% if member.id == current_user.id %}show active{% endif %}"
-          id="user-{{ member.id }}" role="tabpanel" data-user-id="{{ member.id }}">
-          <div class="run-list">Loading...</div>
-        </div>
-      {% endfor %}
-    </div>
-
-    <div class="mb-4"></div>
-
-
-
-
+      
 
     <!-- Members Sidebar -->
     <div class="col-md-4">
@@ -198,7 +195,11 @@
                 <input type="number" name="minutes" class="form-control" min="0" placeholder="Minutes">
               </div>
             </div>
-            <button type="submit" class="btn btn-dark">Add Run</button>
+            <button type="submit" class="btn btn-dark" id="addRunBtn">
+              Add Run
+            </button>
+            <div id="addRunStatus" class="mt-2 text-muted small d-none">Hold on, we're logging your activity.</div>
+
           </form>
         </div>
       </div>
@@ -379,8 +380,6 @@ document.getElementById('inviteForm').addEventListener('submit', async function(
   </div>
 </div>
 
-
-
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -471,6 +470,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector('form[action="{{ url_for('log_activity') }}"]');
+    const submitBtn = document.getElementById('addRunBtn');
+    const statusText = document.getElementById('addRunStatus');
+
+    if (form && submitBtn && statusText) {
+      form.addEventListener('submit', function () {
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Logging...';
+        statusText.classList.remove('d-none');
+      });
+    }
+  });
 </script>
 
 
